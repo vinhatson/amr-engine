@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bàn điều khiển AMR</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:wght@500;600&display=swap">
+
+<style>
+/* Instrument panel: a fixed readout rail above a tabbed workbench.
+   Ground is a cool slate biased toward the verdigris accent; the three
+   decomposition hues are the only saturated colour on the page. */
+:root{
+  --bg:#f4f6f6; --panel:#fcfcfb; --sunk:#eceff0;
+  --fg:#15201f; --fg-2:#4a5a58; --fg-3:#768785;
+  --line:#dde3e3; --line-2:#c6d0cf;
+  --accent:#00897C; --accent-soft:#e2f0ee; --on-accent:#ffffff;
+  --b1:#00897C; --b2:#4C5FD5; --b3:#B06A13;
+  --ok:#2F7A36; --warn:#B06A13; --bad:#B23024; --unk:#6B5BA8;
+  --ff-d:"Spectral",ui-serif,Georgia,serif;
+  --ff-b:"Be Vietnam Pro",ui-sans-serif,system-ui,sans-serif;
+  --ff-m:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101615; --panel:#1a1a19; --sunk:#141c1b;
+  --fg:#e7edec; --fg-2:#a9b8b6; --fg-3:#7b8b89;
+  --line:#2a3433; --line-2:#3b4746;
+  --accent:#19A896; --accent-soft:#132e2b; --on-accent:#06100f;
+  --b1:#19A896; --b2:#6C7BE8; --b3:#C4871F;
+  --ok:#5BAE62; --warn:#C4871F; --bad:#DC6A5E; --unk:#9A8BD6;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101615; --panel:#1a1a19; --sunk:#141c1b;
+  --fg:#e7edec; --fg-2:#a9b8b6; --fg-3:#7b8b89;
+  --line:#2a3433; --line-2:#3b4746;
+  --accent:#19A896; --accent-soft:#132e2b; --on-accent:#06100f;
+  --b1:#19A896; --b2:#6C7BE8; --b3:#C4871F;
+  --ok:#5BAE62; --warn:#C4871F; --bad:#DC6A5E; --unk:#9A8BD6;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ff-b);font-size:14px;line-height:1.55;
+     -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 56px}
+h1,h2,h3{margin:0;font-family:var(--ff-d);font-weight:600;text-wrap:balance}
+.mono{font-family:var(--ff-m);font-variant-numeric:tabular-nums}
+.num{font-family:var(--ff-m);font-variant-numeric:tabular-nums;font-size:.92em}
+.eyebrow{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-3);
+         font-weight:600;font-family:var(--ff-b)}
+.muted{color:var(--fg-2)}
+.dim{color:var(--fg-3);font-size:12.5px}
+
+/* ---- masthead ---- */
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;
+           justify-content:space-between;margin-bottom:18px}
+header.top h1{font-size:clamp(21px,3.4vw,27px);letter-spacing:-.01em}
+header.top p{margin:3px 0 0;font-size:12.5px;color:var(--fg-2);max-width:54ch}
+
+/* ---- readout rail ---- */
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:3px;
+      padding:18px 18px 16px;margin-bottom:16px}
+.rail-top{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
+.verdict{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.arrow{font-family:var(--ff-m);font-weight:600;font-size:clamp(30px,6vw,46px);line-height:1;
+       letter-spacing:-.02em}
+.arrow.up{color:var(--b1)} .arrow.dn{color:var(--b3)} .arrow.flat{color:var(--fg-3)}
+.verdict .gloss{font-size:12.5px;color:var(--fg-2);flex:1 1 180px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:999px;
+      padding:2px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--fg-2)}
+.pill b{font-weight:600;color:var(--fg)}
+.pill.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.states{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
+.state{background:var(--sunk);border-radius:2px;padding:8px 10px;min-width:0}
+.state .k{font-size:10.5px;letter-spacing:.06em;color:var(--fg-3);font-weight:600}
+.state .v{font-family:var(--ff-m);font-variant-numeric:tabular-nums;font-size:15px;font-weight:500}
+.state .d{font-size:11px;color:var(--fg-2);font-family:var(--ff-m)}
+
+/* ---- decomposition bar ---- */
+.decomp{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.decomp-bar{display:flex;height:17px;gap:2px;margin:9px 0 10px;background:var(--sunk);border-radius:2px;
+            overflow:hidden}
+.decomp-bar i{display:block;height:100%;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.swatch{width:9px;height:9px;border-radius:2px;flex:none}
+
+/* ---- tabs ---- */
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:22px 0 0}
+nav.tabs button{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  font:inherit;font-size:13px;font-weight:500;color:var(--fg-3);padding:9px 13px;cursor:pointer;
+  margin-bottom:-1px;border-radius:2px 2px 0 0}
+nav.tabs button:hover{color:var(--fg)}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);background:var(--panel)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.panel{background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 3px 3px;
+       padding:20px 18px}
+
+/* ---- control groups ---- */
+.grp{margin-bottom:26px}
+.grp:last-child{margin-bottom:0}
+.grp-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:3px}
+.grp-h h3{font-size:15px}
+.grp > p.dim{margin:0 0 13px;max-width:72ch}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:13px 22px}
+.ctrl{min-width:0}
+.ctrl-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ctrl-h label{font-size:12.5px;color:var(--fg-2);min-width:0;overflow-wrap:anywhere}
+.ctrl-h label b{color:var(--fg);font-family:var(--ff-m);font-weight:600;font-size:12px}
+.ctrl-h .val{font-family:var(--ff-m);font-variant-numeric:tabular-nums;font-size:12.5px;flex:none}
+.ctrl-h .val.moved{color:var(--accent);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent);margin:3px 0 0;height:18px}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.zone{display:flex;justify-content:space-between;font-size:10.5px;color:var(--fg-3);
+      font-family:var(--ff-m)}
+
+/* ---- tables ---- */
+.tscroll{overflow-x:auto;margin-inline:-18px;padding-inline:18px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:460px}
+th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-3);font-weight:600;
+   white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--ff-m);font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+
+/* ---- meters ---- */
+.meter{display:block;height:7px;background:var(--sunk);border-radius:2px;overflow:hidden;min-width:68px}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.meter.neg i{background:var(--b3)}
+
+/* ---- tags ---- */
+.tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.05em;padding:1px 6px;
+     border-radius:2px;border:1px solid currentColor;white-space:nowrap}
+.t-SUPPORTED{color:var(--ok)} .t-PARTIAL{color:var(--warn)} .t-UNTESTED{color:var(--fg-3)}
+.t-REFUTED{color:var(--bad)} .t-UNIDENTIFIED{color:var(--unk)} .t-MEASURED_ZERO{color:var(--bad)}
+.t-ADDED{color:var(--b2)}
+
+/* ---- scenario chips ---- */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.chip{appearance:none;font:inherit;font-size:12px;background:var(--panel);color:var(--fg-2);
+      border:1px solid var(--line-2);border-radius:999px;padding:4px 12px;cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:500}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- toggles ---- */
+.flags{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:9px 20px}
+.flag{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;min-width:0}
+.flag input{margin:3px 0 0;accent-color:var(--accent);flex:none;width:15px;height:15px}
+.flag .fl-t{font-weight:500}
+.flag .fl-d{color:var(--fg-3);font-size:11.5px;display:block;overflow-wrap:anywhere}
+
+/* ---- checks ---- */
+.check{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:baseline;
+       padding:7px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check .m{font-family:var(--ff-m);font-weight:600}
+.check.ok .m{color:var(--ok)} .check.no .m{color:var(--bad)}
+.check .src{font-size:11px;color:var(--fg-3)}
+
+/* ---- notes ---- */
+.note{border-left:2px solid var(--line-2);padding:1px 0 1px 13px;margin:13px 0 0;
+      font-size:12.5px;color:var(--fg-2);max-width:78ch}
+.note b{color:var(--fg)}
+.note.alert{border-left-color:var(--bad)}
+.note.add{border-left-color:var(--b2)}
+
+/* ---- coupling rows ---- */
+.cpl{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:12px;align-items:center;
+     padding:9px 0;border-bottom:1px solid var(--line)}
+.cpl:last-of-type{border-bottom:0}
+.cpl .mech{font-size:11.5px;color:var(--fg-3);grid-column:1/-1;margin-top:-4px;overflow-wrap:anywhere}
+.cpl-k{font-family:var(--ff-m);font-size:12.5px;font-weight:500}
+.cpl input[type=range]{margin:0}
+
+footer{margin-top:28px;font-size:11.5px;color:var(--fg-3);max-width:78ch}
+
+@media (max-width:720px){
+  .rail-top{grid-template-columns:1fr;gap:16px}
+  .tscroll{margin-inline:-18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div>
+    <h1>Bàn điều khiển AMR</h1>
+    <p>Engine định tính cho <i>The Architecture of Market Regimes</i> — sáu tầng của E9,
+       cộng Layer W, tầng trọng số tham số.</p>
+  </div>
+  <button class="chip" id="theme" type="button" aria-pressed="false">Đổi nền</button>
+</header>
+
+<section class="rail" aria-live="polite">
+  <div class="rail-top">
+    <div>
+      <div class="eyebrow">Kết luận</div>
+      <div class="verdict">
+        <span class="arrow flat" id="arrow">↔ +0.00%</span>
+        <span class="gloss" id="gloss">Chưa có cú sốc nào — trạng thái đang ở nền Table 10.3.</span>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">
+        <span class="pill" id="regime">Chế độ <b>—</b></span>
+        <span class="pill" id="dom">Khối chi phối <b>—</b></span>
+      </div>
+    </div>
+    <div class="states" id="states"></div>
+  </div>
+
+  <div class="decomp">
+    <div class="eyebrow">Phân rã ba khối — Figure 10.2</div>
+    <div class="decomp-bar" id="decompBar" role="img" aria-label="Phân rã đóng góp theo ba khối"></div>
+    <div class="legend" id="decompLegend"></div>
+  </div>
+</section>
+
+<nav class="tabs" role="tablist" id="tabs"></nav>
+<div class="panel" id="panel"></div>
+
+<footer>
+  Chỉ dành cho mục đích học thuật và minh hoạ. Engine kế thừa nguyên vẹn mọi tuyên bố miễn
+  trừ ở đầu cuốn sách. Không tham số nào ở đây được ước lượng — 42 trên 55 tham số của mô
+  hình gốc là OPEN — và không con số nào ở đây là khuyến nghị đầu tư hay dự báo thị trường.
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ========================================================================
+   AMR engine — cổng JavaScript của gói Python amr/.
+   Mọi dạng hàm là bản chuẩn sau ISSUES của sách; mọi phần mở rộng tắt mặc định.
+   ===================================================================== */
+
+const L = (z) => z >= 0 ? (z > 700 ? 1 : 1/(1+Math.exp(-z)))
+                        : (z < -700 ? 0 : Math.exp(z)/(1+Math.exp(z)));
+const logit = (u) => { u = Math.min(Math.max(u,1e-12),1-1e-12); return Math.log(u/(1-u)); };
+const clamp = (x,a=0,b=1) => Math.min(Math.max(x,a),b);
+const blend = (c,k,l) => c + (k-c)*l;
+const slog  = (x) => Math.log(Math.max(x,1e-12));
+
+/* ---- Layer 0: các kênh (Chương 3 và 4) ------------------------------- */
+const DEMAND = [
+  {k:"trans", s:"D_trans", vi:"Cầu giao dịch", ac:0.19, ax:0.22, ev:"PARTIAL"},
+  {k:"debt",  s:"D_debt",  vi:"Cầu trả nợ (Eurodollar)", ac:0.22, ax:0.62, ev:"UNTESTED"},
+  {k:"cap",   s:"D_cap",   vi:"Cầu tài sản vốn", ac:0.38, ax:0.12, ev:"PARTIAL"},
+  {k:"res",   s:"D_res",   vi:"Cầu quản lý dự trữ", ac:0.24, ax:0.27, ev:"UNTESTED"},
+  {k:"hedge", s:"D_hedge", vi:"Cầu phòng hộ", ac:0.10, ax:0.30, ev:"UNTESTED"},
+  {k:"gamma", s:"D_gamma", vi:"Cầu phái sinh (gamma dealer)", ac:0.05, ax:0.25, ev:"UNTESTED"},
+  {k:"net",   s:"D_net",   vi:"Cầu mạng lưới (stablecoin)", ac:0.02, ax:0.02, ev:"MEASURED_ZERO"},
+  {k:"micro", s:"D_micro", vi:"Cầu vi cấu trúc (mùa vụ)", ac:0.02, ax:0.02, ev:"UNTESTED"},
+  {k:"hcap",  s:"D_hcap",  vi:"Cầu vốn con người & IP", ac:0.06, ax:0.06, ev:"UNTESTED"},
+];
+const PREC = {k:"prec", s:"D_prec", vi:"Cầu trú ẩn an toàn", ev:"PARTIAL"};
+const SUPPLY = [
+  {k:"fed",    s:"S_Fed",    vi:"Hành động của Fed", ac:0.38, ax:0.18, ev:"PARTIAL"},
+  {k:"tsy",    s:"S_Tsy",    vi:"Hành động của Kho bạc", ac:0.14, ax:0.18, ev:"UNTESTED"},
+  {k:"coll",   s:"S_coll",   vi:"Tài sản thế chấp (repo)", ac:0.18, ax:0.24, ev:"PARTIAL"},
+  {k:"bank",   s:"S_bank",   vi:"Năng lực bảng cân đối NH", ac:0.18, ax:0.36, ev:"UNTESTED"},
+  {k:"swap",   s:"S_swap",   vi:"Đường swap USD của Fed", ac:0.06, ax:0.28, ev:"SUPPORTED"},
+  {k:"ext",    s:"S_ext",    vi:"Dòng cán cân thanh toán", ac:0.21, ax:0.18, ev:"PARTIAL"},
+  {k:"crypto", s:"S_crypto", vi:"Nguồn cung USD tổng hợp", ac:0.03, ax:0.03, ev:"UNTESTED"},
+];
+
+/* ---- Layer W: sổ trọng số -------------------------------------------- */
+const Z0 = {sigma:0.35, phi:0.35, sus:0.70, hsoc:0.30, iimp:0.30,
+            fhard:0.34, rus:0.20, psi:0.0969};
+
+const W = [
+ ["w_sigma","w_σ","E3 · σ_sys","Trọng số khối stress thị trường",1.00,0,3,"BOOK_STATED","UNTESTED",{},{},
+  "Assumption 5.2 đặt bằng 1 như một quy ước. Sau phép biến đổi hạng, trọng số là thứ DUY NHẤT quyết định ảnh hưởng tương đối (§5.5.4)."],
+ ["w_X","w_X","E3 · σ_sys","Trọng số cú sốc địa chính trị",1.00,0,2.5,"BOOK_STATED","REFUTED",{sigma:-0.40},{},
+  "Ở w_X = 1, một phép đếm bài báo nặng hơn toàn bộ khối giá thị trường. Chuỗi X_pand ⇒ σ_sys ⇒ DXY thất bại trong ba đợt độc lập."],
+ ["w_F","w_F","E3 · σ_sys","Trọng số ma sát thanh khoản",1.00,0,3,"BOOK_STATED","SUPPORTED",{sigma:0.35},{},
+  "Nhánh funding hồi quy lên đô la ở t = +5,04 trong khi nhánh địa chính trị cho t = −0,19."],
+ ["w_H","w_H","E3 · σ_sys","Trọng số sốc phi quân sự",0.50,0,2,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG (E25). GPRD đo chiến tranh và khủng bố, nên 2020 chẳng được gì từ nhánh X_pand."],
+
+ ["phi_0","φ_0","E4 · Φ_sys","Hệ số chặn độ tin cậy trú ẩn",0.192,0,1.5,"OPEN","UNTESTED",{},{},
+  "Chọn sao cho Φ_sys = 0,70 tại trạng thái nền. Bản thân hệ số là OPEN."],
+ ["phi_G","φ_G","E4 · Φ_sys","Hệ số sức mạnh địa chính trị",0.50,0,1.5,"BOOK_STATED","UNTESTED",{},{"sus|sus":-0.50},
+  "0,5 là giả định CS7 của bản gốc. Tải bậc hai: E15b là đạo hàm logistic, nên s(1−s) là 0,25 ở s = 0,5 và 0,09 ở s = 0,9 — năng lực quân sự mua được ÍT hơn cho một đồng tiền đang thống trị."],
+ ["phi_R","φ_R","E4 · Φ_sys","Hệ số rủi ro nội tại Mỹ",0.40,0,1.5,"OPEN","PARTIAL",{hsoc:0.60},{},
+  "§6.8: R_US trở nên bùng nổ khi tầng tâm lý-kỹ thuật khuếch đại nó — một tương tác mà một Φ_sys affine không biểu diễn được. Engine đặt nó vào TRỌNG SỐ thay vì thêm số hạng vào E4."],
+ ["phi_M","φ_M","E4 · Φ_sys","Hệ số niềm tin thể chế",0.55,0,1.5,"OPEN","UNTESTED",{},{},
+  "Dấu đã sửa thành DƯƠNG bởi ISSUES #1."],
+ ["phi_T","φ_T","E4 · Φ_sys","Hệ số phân mảnh địa chính trị",0.35,0,1.5,"OPEN","UNTESTED",{},{},""],
+
+ ["gam_0","γ_0","E5 · s_US","Hệ số chặn thị phần trú ẩn",0.70,-2,3,"OPEN","UNTESTED",{},{},
+  "Chọn sao cho s_US,sys = 0,70 tại nền — giá trị Table 10.3 nêu và CS7 giả định."],
+ ["gam_G","γ_G","E5 · s_US","Hệ số G_pol trong thị phần",1.00,0,3,"BOOK_STATED","UNTESTED",{},{},"1,0 giả định trong CS7."],
+ ["gam_R","γ_R","E5 · s_US","Hệ số R_US trong thị phần",0.80,0,3,"OPEN","UNTESTED",{},{},""],
+ ["gam_E","γ_E","E5 · s_US","Hệ số kỳ vọng lạm phát",0.60,0,3,"OPEN","UNTESTED",{},{},""],
+ ["gam_T","γ_T","E5 · s_US","Hệ số phân mảnh trong thị phần",0.50,0,3,"OPEN","UNTESTED",{},{},""],
+
+ ["kappa_base","κ_base","E6 · κ_sys","Độ lồi nền (đòn bẩy cấu trúc)",0.90,0.1,2,"BOOK_STATED","UNIDENTIFIED",{},{},
+  "Một sai số ở κ_base lan vào MỌI độ co giãn cùng lúc (§10.7.5)."],
+ ["a_V","a_V","E6 · κ_sys","Hệ số vận tốc truyền sốc",0.10,0,1.5,"ENGINE_CONVENTION","UNIDENTIFIED",{},{},
+  "Table 10.3 nêu năm trong bảy hệ số của κ_sys và bỏ qua cái này. Đặt nhỏ thay vì bịa."],
+ ["a_M","a_M","E6 · κ_sys","Hệ số ký ức khủng hoảng",0.10,0,1.5,"ENGINE_CONVENTION","UNIDENTIFIED",{hsoc:-0.45},{},
+  "Kênh đối trọng của §7.6.2: V_meme nâng λ_f, hạ M_shock, hạ κ_sys — dấu NGƯỢC với a_H và a_I. Sách ghi đây là một dấu để ngỏ; ở đây nó tính được."],
+ ["a_A","a_A","E6 · κ_sys","Hệ số siêu phản thân",0.10,0,1.5,"ENGINE_CONVENTION","UNIDENTIFIED",{},{},"Bị Table 10.3 bỏ qua."],
+ ["a_sigma","a_σ","E6 · κ_sys","Hệ số stress hệ thống trong κ",0.60,0,1.5,"BOOK_STATED","UNTESTED",{hsoc:0.50,iimp:0.30},{},
+  "Khôi phục từ E1 bởi ISSUES #3. Thiếu nó thì mô hình không có κ′(σ) > 0."],
+ ["kappa_R","κ_R","E6 · κ_sys","Hệ số làm phẳng do rủi ro Mỹ",0.30,0,0.95,"BOOK_STATED","UNIDENTIFIED",{},{},
+  "Assumption 7.2 cần κ_R < 1 — vùng khả dụng ép điều đó. Proposition 13.2: KHÔNG BAO GIỜ nhận dạng được; thêm tình huống cũng không sửa."],
+ ["a_H","a_H","E6 · κ_sys","Hệ số đồng nhất hoá niềm tin",0.50,0,2,"BOOK_STATED","UNIDENTIFIED",{},{},
+  "Dạng cộng-một bởi ISSUES #3a: đa dạng LÀM CHẬM truyền dẫn chứ không TIÊU DIỆT nó."],
+ ["a_I","a_I","E6 · κ_sys","Hệ số tức thời của xung",0.40,0,2,"BOOK_STATED","UNIDENTIFIED",{},{},""],
+
+ ["lam_1","λ_1","Trú ẩn","Hệ số tuyến tính số hạng trú ẩn",0.08,-0.25,0.25,"BOOK_STATED","REFUTED",{sigma:0.60},{},
+  "Proposition 10.3: nụ cười đô la cần λ_1 < 0. Không một trong 452 đặc tả nào cho độ dốc chế độ bình lặng âm và phân biệt được với không. Remark 11.3: λ_1 nhận dấu ngược nhau ở hai chế độ khi ước lượng riêng."],
+ ["lam_2","λ_2","Trú ẩn","Hệ số bậc hai (độ lồi)",0.15,0,0.45,"BOOK_STATED","PARTIAL",{},{},
+  "I37: một số hạng lồi trên biến bị chặn cho mức tăng lớn nhất ở GIỮA dải, mà mọi đợt được chấm điểm lại bắt đầu khi σ_sys đã cao."],
+ ["alpha_prec","α_prec","Trú ẩn","Độ co giãn của cầu trú ẩn",0.15,0,0.6,"BOOK_STATED","PARTIAL",{sigma:0.70},{},""],
+
+ ["sigma_star","σ*","Λ(σ) · chuyển chế độ","Ngưỡng chuyển chế độ dùng chung",0.55,0.05,0.95,"OPEN","UNTESTED",{},{},
+  "Dùng chung cho cả mười bảy độ co giãn: chế độ là tính chất của HỆ, không phải của từng kênh."],
+ ["theta","θ","Λ(σ) · chuyển chế độ","Độ dốc chuyển chế độ dùng chung",8,1,40,"OPEN","UNTESTED",{},{},""],
+
+ ["L_max","L_max","E8 · Ψ_str","Mức mất tối đa tính toàn vẹn",0.35,0.01,1,"BOOK_STATED","UNTESTED",{},{},
+  "Một tuyên bố về thế giới, không phải tham số phiền nhiễu: L_max = 1 cho phép sụp đổ hoàn toàn; L_max < 1 định đề một sàn cầu đô la không thể xoá."],
+ ["theta_0","θ_0","E8 · Ψ_str","Ngưỡng tích luỹ động lực cứng",0.50,0.05,0.95,"BOOK_STATED","UNTESTED",{hsoc:0.0},{},
+  "Assumption 9.2 giữ ngưỡng cố định trước tầng tự sự. §9.8 gọi đó là chỗ hệ trọng nhất mà chương theo bản gốc. Tải trên H_soc là sự rời đi ấy, và nó bằng 0 trừ khi bạn đặt khác."],
+ ["k_psi","k_Ψ,base","E8 · Ψ_str","Tốc độ xói mòn nền",6,0.5,60,"BOOK_STATED","UNTESTED",{},{},
+  "Tốc độ xói mòn NỀN. Bản thân k_Ψ là k_Ψ(H_soc, V_meme, I_imp), và phụ thuộc trạng thái đó nằm trong hàm k_psi_fn nơi sách đặt nó — trọng số này không mang tải trạng thái riêng, nếu không tầng tự sự sẽ vào tốc độ xói mòn HAI lần."],
+
+ ["w_Calt","w_C","f_hard (BỔ SUNG)","Trọng số hạ tầng thay thế",0.55,0,1,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG (E24). Assumption 9.1 nói C_alt và T_frag chỉ vào qua một vô hướng f_hard tăng theo cả hai — và không bao giờ cho hàm đó."],
+ ["w_Tfrag","w_T","f_hard (BỔ SUNG)","Trọng số phân mảnh",0.45,0,1,"ENGINE_CONVENTION","ADDED",{},{},""],
+ ["w_CT","w_CT","f_hard (BỔ SUNG)","Hệ số tương tác C_alt × T_frag",0.25,-1,1,"ENGINE_CONVENTION","ADDED",{},{},
+  "Dưới-cộng tính mặc định: phân mảnh mà không có lối thoát chỉ tích áp lực mà đô la vẫn hấp thụ được."],
+ ["w_gold","w_Au","f_hard (BỔ SUNG)","Trọng số thay thế dự trữ bằng vàng",0.40,0,1,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG. §17.6.3 — giả thuyết cứu DUY NHẤT sống sót chính bài kiểm tra của nó: thay thế dự trữ bằng vàng THUỘC VỀ C_alt và hiện nằm ngoài. Một C_alt chỉ đếm đường ray thanh toán sẽ tiếp tục đo nhầm lối thoát."],
+ ["delta_off","δ_off","E9 · S_ext","Hệ số suy giảm do trừng phạt",0.80,0,3,"OPEN","PARTIAL",{},{},
+  "Dạng an-toàn-log bởi ISSUES #28: S_ext · exp(−δ_off · S_off)."],
+ ["r_rev","r_rev","Đảo chiều (BỔ SUNG)","Tốc độ đảo chiều cưỡng chế",0,0,1,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG, đóng I34. Đồ thị dấu không chứa mũi tên nào hạ S_off hay T_frag. Bằng 0 mặc định."],
+ ["b_F","b_F","Đường về L5→L4 (BỔ SUNG)","Hệ số kích hoạt tự sự từ động lực cứng",0,0,2,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG, đóng I32. Số hạng (1 + b_F · f_hard) là thứ sách VIẾT RA rồi từ chối thêm, vì nó sẽ là tham số bất khả ước lượng thứ tám."],
+ ["w_prec_short","w_2y","D_prec (BỔ SUNG)","Tỉ trọng đầu ngắn đường cong trú ẩn",0.65,0,1,"ENGINE_CONVENTION","ADDED",{},{},
+  "BỔ SUNG, đóng I40. Kỳ hạn hai năm giữ được tính trú ẩn mà kỳ hạn ba mươi năm đã mất."],
+];
+const WK = {}; W.forEach(w => WK[w[0]] = {
+  key:w[0], sym:w[1], block:w[2], vi:w[3], base:w[4], lo:w[5], hi:w[6],
+  prov:w[7], ev:w[8], g1:w[9], g2:w[10], note:w[11]
+});
+
+/* ---- E18: ma trận ghép cặp, mỗi ô một cơ chế ------------------------- */
+const COUPLING = [
+ ["a_sigma","a_H", 0.45,"§7.8 siêu giòn. Độ nhạy stress và đồng nhất niềm tin là hai nửa của một luận điểm: cú sốc truyền dữ dội VÌ các tác nhân phản ứng giống nhau."],
+ ["a_H","a_sigma", 0.30,"Chiều ngược của cùng cơ chế."],
+ ["a_H","a_I",     0.40,"§7.6 khuếch đại kép: cùng những nền tảng cung cấp mọi driver của cả hai."],
+ ["a_I","a_H",     0.40,"Chiều ngược của cùng cơ chế."],
+ ["a_M","a_H",    -0.55,"§7.6.2, kênh đối trọng bản gốc KHÔNG ghi nhận: V_meme → λ_f → M_shock hạ κ_sys trong khi H_soc nâng nó. Sách ghi đây là một dấu ĐỂ NGỎ."],
+ ["lam_2","a_sigma",0.35,"§7.7.4: thiếu (1+a_σσ) thì không có κ′(σ)>0, 'điều mà toàn bộ luận điểm độ lồi đặt lên'. Một luận điểm, hai phương trình."],
+ ["phi_R","kappa_R",-0.35,"Chốt chặn trùng đếm. R_US đặt MỨC cầu trú ẩn ở Layer 2 và làm suy giảm TRUYỀN DẪN ở Layer 3. Một cơ chế tách qua hai tầng."],
+ ["kappa_R","phi_R",-0.35,"Chiều ngược của cùng cơ chế."],
+ ["phi_G","gam_G",  0.30,"Assumption 7.3 giữ G_pol ra khỏi κ_sys để tránh hệ số thứ ba. Hai cái còn lại là cùng một năng lực đọc hai lần, và cũng không tách rời được."],
+ ["gam_G","phi_G",  0.30,"Chiều ngược của cùng cơ chế."],
+ ["w_F","w_X",     -0.40,"Table 11.6: composite hồi quy TỆ HƠN chính thành phần ma sát của nó, và p_GPRD tải −0,24 lên nhân tố các nhánh kia chia sẻ. Hai nhánh là THAY THẾ, không bổ sung."],
+ ["w_X","w_F",     -0.40,"Chiều ngược của cùng cơ chế."],
+ ["k_psi","a_H",    0.50,"§10.7.4 dịch chuyển cả hai cùng lúc và không gì khác: κ_sys 1,22→1,95 và k_Ψ 6→28. Nắm giữ của tầng tự sự lên hai tầng là MỘT nắm giữ."],
+ ["L_max","theta_0",-0.30,"Cả hai OPEN, cả hai trong E8, một chuỗi số liệu cho cả hai. Một sự kiện về NHẬN DẠNG, không phải về kinh tế."],
+ ["theta_0","L_max",-0.30,"Chiều ngược của cùng cơ chế."],
+ ["alpha_prec","lam_1",-0.25,"Assumption 2.4 làm số hạng trú ẩn tách rời cộng tính khỏi khối cơ học, và §10.7 là chỗ sách nói giả định đó ĐƯỢC XEM XÉT chứ không được thiết lập. Hai cách tham số hoá đối thủ của một dòng chảy."],
+ ["lam_1","alpha_prec",-0.25,"Chiều ngược của cùng cơ chế."],
+];
+
+/* ---- E17/E18: giải hệ trọng số --------------------------------------- */
+function solveWeights(z, over, cpl, useState, useCouple){
+  const keys = Object.keys(WK), u0={}, base={}, ell={}, sd={};
+  for (const k of keys){
+    const w = WK[k];
+    let b = (over && over[k] !== undefined) ? over[k] : w.base;
+    b = Math.min(Math.max(b, w.lo + 1e-12), w.hi - 1e-12);
+    base[k] = b;
+    const span = w.hi - w.lo;
+    u0[k] = Math.min(Math.max(span > 0 ? (b - w.lo)/span : 0.5, 1e-9), 1-1e-9);
+    ell[k] = logit(u0[k]);
+    let d = 0;
+    if (useState){
+      for (const m in w.g1) d += w.g1[m] * ((z[m] ?? Z0[m] ?? 0) - (Z0[m] ?? 0));
+      for (const p in w.g2){
+        const [m,n] = p.split("|");
+        d += w.g2[p] * ((z[m] ?? Z0[m] ?? 0) - (Z0[m] ?? 0)) * ((z[n] ?? Z0[n] ?? 0) - (Z0[n] ?? 0));
+      }
+    }
+    sd[k] = d;
+  }
+  const rows = {}; keys.forEach(k => rows[k] = []);
+  if (useCouple) for (const [k,j,c] of cpl) if (rows[k] && u0[j] !== undefined && k !== j && c) rows[k].push([j,c]);
+  let cnorm = 0;
+  for (const k of keys) cnorm = Math.max(cnorm, rows[k].reduce((a,[,c]) => a + Math.abs(c), 0));
+
+  let u = Object.assign({}, u0), it = 0, conv = false;
+  for (it = 1; it <= 400; it++){
+    let delta = 0; const nu = {};
+    for (const k of keys){
+      let d = ell[k] + sd[k];
+      for (const [j,c] of rows[k]) d += c * (u[j] - u0[j]);
+      const v = Math.abs(d - ell[k]) < 1e-15 ? u0[k] : L(d);
+      delta = Math.max(delta, Math.abs(v - u[k])); nu[k] = v;
+    }
+    u = nu;
+    if (delta < 1e-13){ conv = true; break; }
+  }
+  const vals = {};
+  for (const k of keys){
+    vals[k] = Math.abs(u[k]-u0[k]) < 1e-15 ? base[k] : WK[k].lo + (WK[k].hi - WK[k].lo) * u[k];
+  }
+  return {vals, base, cnorm, unique: cnorm < 4,
+          amp: cnorm < 4 ? 1/(1 - cnorm/4) : Infinity, iters: it, conv};
+}
+
+/* ---- trạng thái thế giới --------------------------------------------- */
+const LAT0 = {G_pol:0.70, R_US:0.20, M_trust:0.70, T_frag:0.42, E_inf:0.30,
+  C_alt:0.32, Au_sub:0.38, V_USD:0.60, A_meta:0.40, S_off:0.15,
+  A_alg:0.60, C_src:0.65, P_AI:0.55, T_exp:0.70, R_div:0.3275,
+  S_access:0.80, R_fric:0.40, P_habit:0.65, E_sys:0.70};
+const SIG0 = {p_vix:0.42, p_bondvol:0.42, p_gpr:0.30, p_stlfsi:0.33, p_health:0.00};
+const CH0 = () => { const o = {}; DEMAND.concat(SUPPLY).forEach(c => o[c.k] = 1); o.prec = 1; return o; };
+
+const baseState = () => ({ch:CH0(), lat:Object.assign({},LAT0), sig:Object.assign({},SIG0),
+                          DXY0:100, prec_short:1, prec_long:1, reversal:0});
+
+const KPSI_C = [2.2, 1.0, 0.8], KPSI_V0 = 0.23617, KPSI_H0 = 0.30, KPSI_I0 = 0.30;
+function kPsiFn(kb,H,V,I){
+  const [cH,cV,cI] = KPSI_C;
+  return kb * ((1+cH*H)*(1+cV*V)*(1+cI*I)) /
+              ((1+cH*KPSI_H0)*(1+cV*KPSI_V0)*(1+cI*KPSI_I0));
+}
+
+function mShock(t){            /* E11–E13, Ω = {2008, 2001}; 2020 vắng mặt vì bản gốc không gán mức độ */
+  let s = 0;
+  for (const [yr,sev] of [[2008.75,10],[2001.7,6]]){
+    const age = t - yr; if (age < 0) continue;
+    s += sev * Math.exp(-0.08*age) * Math.max(0, 1 - age/25);
+  }
+  return clamp(s/13);
+}
+
+function psycho(lat, eta, cL0, cL1, bF, fh){
+  const kA = lat.A_alg*lat.C_src*lat.P_AI*lat.T_exp;
+  let K = lat.S_access*lat.P_habit*lat.E_sys/(1+lat.R_fric);
+  let g0 = K*cL0, g1 = K*cL1;
+  if (g0+g1 > 1){ const s = 1/(g0+g1); g0 *= s; g1 *= s; }
+  let H = 0.5, it = 0;
+  for (it = 1; it <= 400; it++){
+    const I = g0+g1*H, Hn = L(eta*(kA*I - lat.R_div));
+    if (Math.abs(Hn-H) < 1e-13){ H = Hn; break; } H = Hn;
+  }
+  const I = g0+g1*H, contraction = 0.25*eta*kA*g1;
+  const lam = L(eta*(kA*I - lat.R_div));
+  const Tp = eta*kA*lam*(1-lam)*g1;
+  const V = 0.4*H*(1+0.8*lat.A_alg)*(1+0.6*lat.P_AI)*(1+bF*fh);
+  return {H:clamp(H), I:clamp(I), kA, g0, g1, contraction,
+          unique: contraction < 4, amp: Tp < 1 ? 1/(1-Tp) : Infinity, V, B:clamp(H*I)};
+}
+
+const OPT0 = {state:true, couple:true, recentre:false, regimeLambda:false,
+  returnPath:false, reversal:false, healthLeg:false, splitPrec:false,
+  fundingHaven:false, sIn:true, eta:3.0, cL0:0.80, cL1:1.18, t:2026.75,
+  cbar:1.30, sc:0.55, anchor:null};
+
+function run(st, over, opt, cpl){
+  opt = Object.assign({}, OPT0, opt||{});
+  cpl = cpl || COUPLING;
+  const lat = st.lat;
+  let z = {sigma:0.35, phi:0.35, sus:0.70, hsoc:0.30, iimp:0.30,
+           fhard:0.34, rus:lat.R_US, psi:0};
+  let sol, sg, psy, phi, sus, kap, fh, kpsi, psi = 1, ms, W_;
+  const warn = [];
+
+  for (let outer = 0; outer < 12; outer++){
+    sol = solveWeights(z, over, cpl, opt.state, opt.couple);
+    W_ = sol.vals;
+
+    /* E3 */
+    const market = 0.5*(st.sig.p_vix + st.sig.p_bondvol);
+    const wH = opt.healthLeg ? W_.w_H : 0;
+    const bse = W_.w_sigma*market + W_.w_X*st.sig.p_gpr + wH*st.sig.p_health;
+    const fric = 1 + W_.w_F*st.sig.p_stlfsi;
+    const C = bse*fric, tot = Math.max(bse, 1e-12);
+    sg = {sigma: clamp(L((C - opt.cbar)/opt.sc)),
+          mkt: W_.w_sigma*market/tot, news: W_.w_X*st.sig.p_gpr/tot, hlth: wH*st.sig.p_health/tot,
+          fric, fund: clamp(L((st.sig.p_stlfsi-0.5)*4)), gen: clamp(L((market-0.5)*4))};
+
+    /* Layer 4 */
+    psy = psycho(lat, opt.eta, opt.cL0, opt.cL1, opt.returnPath ? W_.b_F : 0, z.fhard);
+
+    /* Layer 5 */
+    let Tf = lat.T_frag, Soff = lat.S_off;
+    if (opt.reversal && st.reversal > 0){
+      const r = W_.r_rev*st.reversal; Tf = clamp(Tf*(1-r)); Soff = clamp(Soff*(1-r));
+    }
+    const Cw = (1-W_.w_gold)*lat.C_alt + W_.w_gold*lat.Au_sub;
+    fh = clamp(W_.w_Calt*Cw + W_.w_Tfrag*Tf - W_.w_CT*Cw*Tf);
+    kpsi = kPsiFn(W_.k_psi, psy.H, psy.V, psy.I);
+    psi = 1 - W_.L_max*L(kpsi*(fh - W_.theta_0));
+
+    /* Layer 2 */
+    phi = W_.phi_0 + W_.phi_G*lat.G_pol - W_.phi_R*lat.R_US + W_.phi_M*lat.M_trust - W_.phi_T*Tf;
+    sus = L(W_.gam_0 + W_.gam_G*lat.G_pol - W_.gam_R*lat.R_US - W_.gam_E*lat.E_inf - W_.gam_T*Tf);
+
+    /* Layer 3 */
+    ms = mShock(opt.t);
+    const f = {
+      "κ_base":W_.kappa_base, "(1+a_V·V_USD)":1+W_.a_V*lat.V_USD,
+      "(1+a_M·M_shock)":1+W_.a_M*ms, "(1+a_A·A_meta)":1+W_.a_A*lat.A_meta,
+      "(1+a_σ·σ_sys)":1+W_.a_sigma*sg.sigma, "(1−κ_R·R_US)":1-W_.kappa_R*lat.R_US,
+      "(1+a_H·H_soc)":1+W_.a_H*psy.H, "(1+a_I·I_imp)":1+W_.a_I*psy.I};
+    let kv = 1; for (const q in f) kv *= f[q];
+    kap = {k:kv, f, max: W_.kappa_base*(1+W_.a_V)*(1+W_.a_M)*(1+W_.a_A)*(1+W_.a_sigma)*(1+W_.a_H)*(1+W_.a_I),
+           Soff, Tf};
+
+    const zn = {sigma:sg.sigma, phi:clamp(phi/2), sus, hsoc:psy.H, iimp:psy.I,
+                fhard:fh, rus:lat.R_US, psi:clamp(1-psi)};
+    let d = 0; for (const q in z) d = Math.max(d, Math.abs(zn[q]-z[q]));
+    z = zn; if (d < 1e-11) break;
+  }
+
+  /* Layer 0 + lắp ráp E9 */
+  const lam = L(W_.theta*(sg.sigma - W_.sigma_star));
+  const terms = []; let lnB = 0;
+  for (const c of DEMAND){
+    const lv = st.ch[c.k], a = blend(c.ac, c.ax, lam), lc = a*slog(lv);
+    lnB += lc; terms.push({k:c.k, s:c.s, vi:c.vi, side:"D", lv, e:a, lc, ev:c.ev});
+  }
+  const aP = W_.alpha_prec;
+  let pl = st.ch.prec;
+  if (opt.splitPrec){
+    const w2 = W_.w_prec_short;
+    pl = Math.exp(w2*slog(st.prec_short) + (1-w2)*slog(st.prec_long));
+  }
+  const pb = opt.sIn ? sus*pl : pl, pe = opt.sIn ? aP : aP*sus;
+  const lcP = pe*slog(pb) - pe*slog(opt.sIn ? sus : 1);
+  lnB += lcP;
+  terms.push({k:"prec", s:PREC.s, vi:PREC.vi, side:"D", lv:pl, e:pe, lc:lcP, ev:PREC.ev});
+  for (const c of SUPPLY){
+    let lv = st.ch[c.k];
+    if (c.k === "ext") lv *= Math.exp(-W_.delta_off*kap.Soff);
+    const b = blend(c.ac, c.ax, lam), lc = -b*slog(lv);
+    lnB += lc; terms.push({k:c.k, s:c.s, vi:c.vi, side:"S", lv, e:b, lc, ev:c.ev});
+  }
+  const mech = kap.k*lnB;
+
+  const sgUse = opt.fundingHaven ? sg.fund : sg.sigma;
+  let l1 = W_.lam_1; const l2 = W_.lam_2;
+  if (opt.regimeLambda) l1 = blend(-0.05, 0.20, lam);
+  let haven;
+  if (opt.recentre){ const d = sgUse - (opt.anchor ?? 0.5); haven = (l1*d + l2*d*d)*phi; }
+  else haven = (l1*sgUse + l2*sgUse*sgUse)*phi;
+
+  const lnD = slog(psi) + slog(st.DXY0) + mech + haven;
+
+  if (phi <= 0) warn.push("Φ_sys ≤ 0: số hạng trú ẩn ĐỔI DẤU thay vì co lại (§6.6.5). Assumption 2.5 loại vùng này bằng giả định, không bằng cấu trúc.");
+  if (W_.kappa_R >= 1) warn.push("κ_R ≥ 1: κ_sys âm, mô hình đảo ngược (Assumption 7.2).");
+  if (!psy.unique) warn.push("η·κ_A·g₁ = " + psy.contraction.toFixed(2) + " ≥ 4: điểm bất động Layer 4 không duy nhất — tối đa ba cân bằng, cái giữa bất ổn (Proposition 8.3). Kết quả đang đứng trên MỘT nhánh.");
+  if (!sol.unique) warn.push("‖C‖∞ = " + sol.cnorm.toFixed(2) + " ≥ 4: hệ trọng số không có nghiệm duy nhất (E19).");
+
+  return {lnD, DXY:Math.exp(lnD), psi, lnB, mech, haven, sg, phi, sus, kap, psy,
+          fh, kpsi, ms, lam, sol, terms, warn, W:W_,
+          dSigma: (function(){
+            const direct = (l1 + 2*l2*sg.sigma)*phi;
+            const as = W_.a_sigma, refl = (as/(1+as*sg.sigma))*kap.k*lnB;
+            const dl = W_.theta*lam*(1-lam);
+            let reg = 0;
+            for (const t of terms){
+              const c = DEMAND.concat(SUPPLY).find(x => x.k === t.k);
+              if (!c) continue;
+              reg += (t.side === "D" ? 1 : -1)*(c.ax - c.ac)*dl*slog(t.lv);
+            }
+            reg *= kap.k;
+            return {direct, refl, reg, total:direct+refl+reg};
+          })(),
+          smile: (l2 > 0 && l1 < 0 && -l1/(2*l2) > 0 && -l1/(2*l2) < 1) ? -l1/(2*l2) : null};
+}
+
+/* ---- thang mũi tên (§2.7.1) ------------------------------------------ */
+function arrowOf(dln){
+  const pct = 100*dln, a = Math.abs(pct);
+  if (a < 0.5)  return {g:"↔", pct, cls:"flat", gl:"không đổi đáng kể"};
+  const up = pct > 0;
+  if (a < 3.0)  return {g: up?"↑":"↓",    pct, cls: up?"up":"dn", gl:"biến động nhỏ, trong biên độ thường"};
+  if (a < 7.5)  return {g: up?"↑↑":"↓↓",  pct, cls: up?"up":"dn", gl:"biến động lớn, cỡ một đợt căng thẳng"};
+  return          {g: up?"↑↑↑":"↓↓↓", pct, cls: up?"up":"dn", gl:"cực đoan, cỡ lớn nhất từng quan sát hoặc đổi chế độ"};
+}
+function regimeOf(s, lam){
+  if (s >= 0.90) return ["KHỦNG HOẢNG","trên phân vị 98 của mẫu 2006–2026"];
+  if (s >= 0.80) return ["CĂNG THẲNG","trong 10,2% số ngày căng thẳng nhất của mẫu"];
+  if (lam >= 0.5) return ["CHUYỂN TIẾP","đã qua ngưỡng σ*: độ co giãn đang chuyển sang giá trị khủng hoảng"];
+  return ["BÌNH LẶNG","dưới ngưỡng σ*: độ co giãn ở giá trị bình lặng"];
+}
+const EVNOTE = {
+  SUPPORTED:"Chương 17 xếp vào phần sống sót.",
+  PARTIAL:"Bằng chứng hỗn hợp hoặc chỉ một tình huống.",
+  UNTESTED:"Không có phán quyết — 46/110 dự báo của sách thuộc nhóm này.",
+  REFUTED:"Chương 17 xếp vào phần KHÔNG sống sót.",
+  UNIDENTIFIED:"Không nhận dạng được: thêm dữ liệu cũng không sửa (Prop. 11.1 / 13.2).",
+  MEASURED_ZERO:"Đo được, đã đo, và bằng không (ρ = −0,062; t = −0,55).",
+  ADDED:"Biến do engine bổ sung — không có trong sách, chưa qua kiểm chứng nào."
+};
+
+/* ---- kịch bản --------------------------------------------------------- */
+const SCEN = {
+  none:{vi:"Trạng thái nền", tgt:null, src:"Table 10.3",
+    note:"Không cú sốc nào. Trạng thái nền tái tạo Table 10.3 theo từng số hạng.", f:s=>s},
+  liquidity:{vi:"Thanh khoản", tgt:17.7, src:"§10.7.1",
+    note:"σ nhảy lên 0,750; năng lực bảng cân đối co lại; cầu trú ẩn vọt lên. Sách: vọt rồi trả lại hết — sau 24 tháng còn +0,19%.",
+    f:s=>mut(s,{sig:{p_vix:.86,p_bondvol:.82,p_stlfsi:.60,p_gpr:.34},
+                ch:{bank:.9573,prec:1.1011,debt:1.0370,cap:.9723,coll:.9771}})},
+  liqswap:{vi:"Thanh khoản + mở swap", tgt:null, src:"§10.7.1",
+    note:"Cùng cú sốc, tháng 2, đường swap mở. S_swap là kênh cung DUY NHẤT mở được có chủ ý và nhanh.",
+    f:s=>mut(s,{sig:{p_vix:.86,p_bondvol:.82,p_stlfsi:.60,p_gpr:.34},
+                ch:{bank:.9573,prec:1.1011,debt:1.0370,cap:.9723,coll:.9771,swap:1.21,fed:1.02}})},
+  sanctions:{vi:"Trừng phạt", tgt:4.75, src:"§10.7.2",
+    note:"S_off tăng → S_ext hiệu dụng giảm; T_frag tích luỹ, Ψ_str xói mòn. Hai hiệu ứng NGƯỢC DẤU và khác hằng số thời gian. Lưu ý kịch bản này KHÔNG động vào các nhánh stress.",
+    f:s=>mut(s,{lat:{S_off:.35,T_frag:.52}})},
+  sanclate:{vi:"Trừng phạt, 2 năm sau", tgt:-0.49, src:"§10.7.2",
+    note:"Động lực cứng đã tích luỹ vượt ngưỡng. Vũ khí hoá đồng đô la CÓ tác dụng, rồi THÔI tác dụng.",
+    f:s=>mut(s,{lat:{S_off:.35,T_frag:.70,C_alt:.52,Au_sub:.58}})},
+  trust:{vi:"Niềm tin", tgt:-4.3, src:"§10.7.3",
+    note:"M_trust giảm, R_US tăng. Sách: tháng 1 đô la TĂNG vì stress lên và số hạng trú ẩn còn chạy; chỉ sau một hai quý mới tách khỏi một cú sốc rủi ro.",
+    f:s=>mut(s,{lat:{M_trust:.42,R_US:.52,E_inf:.52},sig:{p_vix:.62,p_stlfsi:.55},ch:{res:.9520,cap:.9420}})},
+  trust1:{vi:"Niềm tin, tháng 1", tgt:2.0, src:"§10.7.3",
+    note:"Giai đoạn quá độ: stress đã lên, mất mát cơ học chưa kịp ghi nhận.",
+    f:s=>mut(s,{lat:{M_trust:.60,R_US:.38},sig:{p_vix:.62,p_stlfsi:.55}})},
+  narrative:{vi:"Tự sự", tgt:9.7, src:"§10.7.4",
+    note:"H_soc và I_imp bật lên; KHÔNG kênh cung/cầu nào dịch chuyển. Dự báo phản trực giác duy nhất của sách: một đồng đô la đang lên tương thích với một hệ vừa trở nên mong manh hơn nhiều.",
+    f:s=>mut(s,{lat:{A_alg:.92,C_src:.90,P_AI:.88,T_exp:.92,R_div:.18,S_access:.95,R_fric:.12,P_habit:.90,E_sys:.92}})},
+  gfc:{vi:"GFC 2008 (CS1)", tgt:6.59, src:"Ch.13",
+    note:"Tổng thực tế +18,33%; mô hình giải thích +6,59 — dư số 64%, và dư số không bám theo bất kỳ chênh lệch funding đo được nào.",
+    f:s=>mut(s,{sig:{p_vix:.99,p_bondvol:.95,p_stlfsi:.98,p_gpr:.35},
+                ch:{prec:1.18,debt:1.09,bank:.90,coll:.91,cap:.93,fed:1.10,swap:1.40}})},
+  covid:{vi:"COVID 2020 (CS2)", tgt:1.85, src:"Ch.13",
+    note:"+7,54% trong hai tuần, rồi CHÍNH SÁCH đảo ngược nó. Mô hình giải thích +1,85 — dư số 76%.",
+    f:s=>mut(s,{sig:{p_vix:1,p_bondvol:.93,p_stlfsi:.90,p_health:.98},
+                ch:{prec:1.2006,debt:1.0804,bank:.9168,coll:.9079,trans:.9257,fed:1.1859,swap:1.7149}})},
+  rally22:{vi:"Đợt tăng 2022 (CS5)", tgt:15.45, src:"Ch.14",
+    note:"Khởi điểm σ = 0,767. Khối trú ẩn giải thích 0,34 trên 15,45% — dư số 97,8%, lớn hơn cả 2008 lẫn 2020. Ca cực đoan của I37.",
+    f:s=>mut(s,{sig:{p_vix:.70,p_bondvol:.82,p_stlfsi:.62,p_gpr:1},
+                lat:{S_off:.45,T_frag:.52,E_inf:.70},ch:{cap:1.06,debt:1.04,fed:.94}})},
+  tariff:{vi:"Thuế quan 2025 (CS11)", tgt:null, src:"Ch.16",
+    note:"Cú sốc có nguồn gốc từ chính nước Mỹ: Φ_sys co lại ĐÚNG LÚC σ_sys đẩy lên. Thất bại của CS11 là lỗi TRÌNH TỰ, không phải bác bỏ.",
+    f:s=>mut(s,{sig:{p_vix:.78,p_stlfsi:.58},lat:{R_US:.48,M_trust:.50,E_inf:.55},ch:{trans:.96,cap:.95}})},
+  iran:{vi:"Iran & Hormuz 2026 (CS12)", tgt:null, src:"Ch.14",
+    note:"Chỉ số địa chính trị cao thứ năm kể từ 1985, nhánh funding ở 0,228, và đô la KHÔNG dịch chuyển. Đầu cực đoan của kết quả âm được lặp lại nhiều nhất trong sách.",
+    f:s=>mut(s,{sig:{p_gpr:.99,p_vix:.52,p_stlfsi:.228},ch:{trans:1.03}})},
+};
+function mut(s, d){
+  const o = {ch:Object.assign({},s.ch), lat:Object.assign({},s.lat), sig:Object.assign({},s.sig),
+             DXY0:s.DXY0, prec_short:s.prec_short, prec_long:s.prec_long, reversal:s.reversal};
+  if (d.ch)  Object.assign(o.ch, d.ch);
+  if (d.lat) Object.assign(o.lat, d.lat);
+  if (d.sig) Object.assign(o.sig, d.sig);
+  if (d.top) Object.assign(o, d.top);
+  return o;
+}
+
+/* ========================================================================
+   Giao diện
+   ===================================================================== */
+const S = {
+  scen:"sanctions", tab:"state",
+  state:baseState(),
+  over:{},                                 /* trọng số người dùng đặt */
+  cpl:COUPLING.map(r => r.slice()),        /* ma trận có thể sửa */
+  opt:Object.assign({}, OPT0),
+};
+const $ = (q,r=document) => r.querySelector(q);
+const el = (t,c,x) => { const n = document.createElement(t); if (c) n.className = c;
+                        if (x !== undefined) n.textContent = x; return n; };
+const f3 = (x) => (x).toFixed(3);
+const pc = (x) => (100*x).toFixed(2) + "%";
+
+function currentStates(){
+  const b = baseState();
+  const cur = SCEN[S.scen].f(S.state);
+  return {b, cur};
+}
+function compute(){
+  const {b, cur} = currentStates();
+  let opt = Object.assign({}, S.opt);
+  if (opt.recentre && opt.anchor === null) opt = Object.assign({}, opt, {anchor: run(b, S.over, Object.assign({},opt,{recentre:false}), S.cpl).sg.sigma});
+  const rb = run(b, S.over, opt, S.cpl);
+  const rc = run(cur, S.over, opt, S.cpl);
+  return {rb, rc, opt};
+}
+
+/* ---- rail ------------------------------------------------------------- */
+function paintRail(rb, rc){
+  const a = arrowOf(rc.lnD - rb.lnD);
+  const ar = $("#arrow");
+  ar.textContent = a.g + " " + (a.pct >= 0 ? "+" : "") + a.pct.toFixed(2) + "%";
+  ar.className = "arrow " + a.cls;
+  $("#gloss").textContent = a.gl + (SCEN[S.scen].tgt !== null
+    ? "  ·  Sách nói " + (SCEN[S.scen].tgt >= 0 ? "+" : "") + SCEN[S.scen].tgt.toFixed(2) + "%"
+      + "  (lệch " + ((a.pct - SCEN[S.scen].tgt) >= 0 ? "+" : "") + (a.pct - SCEN[S.scen].tgt).toFixed(2) + ")"
+    : "");
+
+  const [rg, rn] = regimeOf(rc.sg.sigma, rc.lam);
+  $("#regime").innerHTML = "Chế độ <b>" + rg + "</b>";
+  $("#regime").title = rn;
+
+  const st = $("#states"); st.textContent = "";
+  const rows = [
+    ["σ_sys", rc.sg.sigma, rb.sg.sigma, 3],
+    ["κ_sys", rc.kap.k, rb.kap.k, 3],
+    ["Φ_sys", rc.phi, rb.phi, 3],
+    ["s_US",  rc.sus, rb.sus, 3],
+    ["Ψ_str", rc.psi, rb.psi, 4],
+    ["f_hard", rc.fh, rb.fh, 3],
+  ];
+  for (const [k, v, v0, d] of rows){
+    const n = el("div","state");
+    n.append(el("div","k",k), el("div","v", v.toFixed(d)));
+    const dd = v - v0;
+    n.append(el("div","d", Math.abs(dd) < 5e-5 ? "— không đổi"
+                          : (dd > 0 ? "▲ +" : "▼ ") + dd.toFixed(d)));
+    st.append(n);
+  }
+
+  const blocks = [
+    ["cơ học ×κ", rc.mech - rb.mech, "var(--b1)"],
+    ["trú ẩn",    rc.haven - rb.haven, "var(--b2)"],
+    ["cấu trúc Ψ", Math.log(Math.max(rc.psi,1e-12)) - Math.log(Math.max(rb.psi,1e-12)), "var(--b3)"],
+  ];
+  const tot = blocks.reduce((s,[,v]) => s + Math.abs(v), 0);
+  const bar = $("#decompBar"); bar.textContent = "";
+  if (tot < 1e-9){
+    const rest = el("div");
+    rest.style.cssText = "font-size:11px;color:var(--fg-3);padding:1px 8px;line-height:15px";
+    rest.textContent = "Không khối nào dịch chuyển — hệ đang nghỉ ở trạng thái nền.";
+    bar.append(rest);
+  }
+  const lg = $("#decompLegend"); lg.textContent = "";
+  let dom = blocks[0];
+  for (const b of blocks) if (Math.abs(b[1]) > Math.abs(dom[1])) dom = b;
+  for (const [n, v, c] of blocks){
+    if (tot >= 1e-9){
+      const i = el("i"); i.style.width = (100*Math.abs(v)/Math.max(tot,1e-12)).toFixed(2) + "%";
+      i.style.background = c; bar.append(i);
+    }
+    const s = el("span");
+    const sw = el("span","swatch"); sw.style.background = c;
+    s.append(sw, el("span", null, n + " "), (() => {
+      const m = el("span","num", (v >= 0 ? "+" : "") + (100*v).toFixed(2) + "%  ·  "
+                   + (tot >= 1e-9 ? (100*Math.abs(v)/tot).toFixed(1) : "0.0") + "%");
+      m.style.color = "var(--fg-2)"; return m; })());
+    lg.append(s);
+  }
+  $("#dom").innerHTML = "Khối chi phối <b>" + dom[0] + "</b>";
+}
+
+/* ---- tabs ------------------------------------------------------------- */
+const TABS = [
+  ["state","Trạng thái"], ["weights","Trọng số"], ["inter","Tương tác"],
+  ["share","Tỉ lệ & vùng"], ["check","Kiểm tra"], ["about","Về engine"],
+];
+function paintTabs(){
+  const n = $("#tabs"); n.textContent = "";
+  for (const [k, lbl] of TABS){
+    const b = el("button", null, lbl);
+    b.type = "button"; b.setAttribute("role","tab");
+    b.setAttribute("aria-selected", S.tab === k ? "true" : "false");
+    b.onclick = () => { S.tab = k; render(); };
+    n.append(b);
+  }
+}
+
+function slider(label, sym, val, lo, hi, step, onInput, extra){
+  const c = el("div","ctrl");
+  const h = el("div","ctrl-h");
+  const lab = el("label");
+  if (sym){ const b = el("b", null, sym); lab.append(b, document.createTextNode(" " + label)); }
+  else lab.textContent = label;
+  const v = el("span","val " + (extra && extra.moved ? "moved" : ""),
+               extra && extra.fmt ? extra.fmt(val) : f3(val));
+  h.append(lab, v); c.append(h);
+  const r = document.createElement("input");
+  r.type = "range"; r.min = lo; r.max = hi; r.step = step; r.value = val;
+  r.id = "s_" + (sym || label).replace(/\W/g,"_");
+  lab.setAttribute("for", r.id);
+  r.oninput = () => onInput(parseFloat(r.value));
+  c.append(r);
+  if (extra && extra.zone){
+    const z = el("div","zone");
+    z.append(el("span", null, extra.zone[0]), el("span", null, extra.zone[1]));
+    c.append(z);
+  }
+  if (extra && extra.sub) c.append(Object.assign(el("div","dim", extra.sub), {style:"margin-top:2px"}));
+  return c;
+}
+
+function group(title, eyebrow, desc){
+  const g = el("div","grp");
+  const h = el("div","grp-h");
+  h.append(el("h3", null, title));
+  if (eyebrow) h.append(el("span","eyebrow", eyebrow));
+  g.append(h);
+  if (desc) g.append(el("p","dim", desc));
+  const c = el("div","ctrls"); g.append(c);
+  g.ctrls = c;
+  return g;
+}
+
+/* ---- tab: trạng thái --------------------------------------------------- */
+function tabState(p, rc){
+  const chips = el("div","chips");
+  for (const k in SCEN){
+    const b = el("button","chip", SCEN[k].vi);
+    b.type = "button"; b.setAttribute("aria-pressed", S.scen === k ? "true" : "false");
+    b.onclick = () => { S.scen = k; render(); };
+    chips.append(b);
+  }
+  const gh = group("Kịch bản", SCEN[S.scen].src);
+  gh.insertBefore(chips, gh.ctrls);
+  gh.insertBefore(el("p","dim", SCEN[S.scen].note), gh.ctrls);
+  gh.ctrls.remove();
+  p.append(gh);
+
+  const g1 = group("Layer 1 — nhánh của σ_sys", "E3",
+    "Mọi nhánh vào như hạng phân vị trong [0,1] (Assumption 5.1). σ_sys phụ thuộc MẪU: tính lại trên mẫu ngắn hơn là đổi mọi giá trị, nên nó không bao giờ là chuỗi thời gian thực.");
+  const sigLabels = {p_vix:["p_VIX","biến động được định giá"], p_bondvol:["p_bondvol","thay thế 21 ngày cho MOVE trả phí"],
+    p_gpr:["p_GPRD","đếm tin địa chính trị — AR(1) = 0,503 so với 0,97+ của các nhánh thị trường"],
+    p_stlfsi:["p_STLFSI","nhánh ma sát — hồi quy lên đô la ở t = +5,04"],
+    p_health:["p_health","BỔ SUNG (E25): nhánh phi quân sự. Cần bật cờ --health-leg."]};
+  for (const k in sigLabels){
+    const [sym, sub] = sigLabels[k];
+    g1.ctrls.append(slider(sub, sym, S.state.sig[k], 0, 1, 0.01,
+      v => { S.state.sig[k] = v; render(); }, {}));
+  }
+  p.append(g1);
+
+  const g2 = group("Layer 2 — biến cấu trúc và niềm tin", "E4 · E5",
+    "Mọi điều biến ẩn nằm trong [0,1] (Assumption 2.2), nên một hệ số trên bất kỳ cái nào đọc thành hiệu ứng của việc dịch qua TOÀN dải.");
+  for (const [k, lbl] of [["G_pol","Sức mạnh địa chính trị — Tier 3, không có bộ tổng hợp trên ba năng lực"],
+      ["R_US","Rủi ro nội tại nước Mỹ"], ["M_trust","Niềm tin thể chế — dấu đã sửa thành DƯƠNG (ISSUES #1)"],
+      ["T_frag","Phân mảnh địa chính trị — chỉ có số thay thế"], ["E_inf","Kỳ vọng lạm phát"]])
+    g2.ctrls.append(slider(lbl, k, S.state.lat[k], 0, 1, 0.01, v => { S.state.lat[k] = v; render(); }));
+  p.append(g2);
+
+  const g3 = group("Layer 3 — các driver ẩn của κ_sys", "E6",
+    "Bảy hệ số nhân năm đầu vào không quan sát được, cộng hai cái nữa là kết quả của một phép tính điểm bất động. Proposition 11.1: κ_sys có thể nhận dạng như MỘT trạng thái, không bao giờ như phân rã của nó.");
+  for (const [k, lbl] of [["V_USD","Vận tốc truyền sốc — dựng được từ GDELT"],
+      ["A_meta","Siêu phản thân (Soros) — không có chuỗi số liệu"]])
+    g3.ctrls.append(slider(lbl, k, S.state.lat[k], 0, 1, 0.01, v => { S.state.lat[k] = v; render(); }));
+  p.append(g3);
+
+  const g4 = group("Layer 4 — tâm lý-kỹ thuật", "E7 / E7b",
+    "Chín biến, KHÔNG biến nào có chuỗi số liệu. H_soc và I_imp là điểm bất động của một ánh xạ (Equation 8.8), không phải đầu vào tự do: η·κ_A·g₁ = " + rc.psy.contraction.toFixed(3) + " (< 4 ⟹ duy nhất, hút toàn cục). Hệ số khuếch đại 1/(1−T′) = " + rc.psy.amp.toFixed(3) + ".");
+  for (const [k, lbl] of [["A_alg","Cường độ khuếch đại thuật toán"], ["C_src","Tập trung nguồn nội dung"],
+      ["P_AI","Mức thâm nhập của AI tạo sinh"], ["T_exp","Chỉ số thời lượng phơi nhiễm"],
+      ["R_div","Sức kháng đa dạng — biến PHÒNG THỦ của tầng"],
+      ["S_access","Tốc độ tiếp cận (nghĩ → bấm)"], ["R_fric","Ma sát kháng cự — vào như 1/(1+R), không bao giờ (1−R)"],
+      ["P_habit","Cường độ thói quen được lập trình"], ["E_sys","Mức gắn kết hệ sinh thái"]])
+    g4.ctrls.append(slider(lbl, k, S.state.lat[k], 0, 1, 0.01, v => { S.state.lat[k] = v; render(); }));
+  p.append(g4);
+
+  const g5 = group("Layer 5 — động lực cứng", "E8 · E24",
+    "f_hard là bộ tổng hợp mà Assumption 9.1 GIẢ ĐỊNH tồn tại và không bao giờ viết ra. E24 viết nó, và mở rộng C_alt để bao gồm thay thế dự trữ bằng vàng — giả thuyết cứu duy nhất sống sót chính bài kiểm tra của nó (§17.6.3).");
+  for (const [k, lbl] of [["C_alt","Hạ tầng thanh toán thay thế — CIPS, mCBDC, hợp đồng phi USD"],
+      ["Au_sub","BỔ SUNG: thay thế dự trữ bằng vàng"],
+      ["S_off","Cường độ trừng phạt / phong toả tài sản"]])
+    g5.ctrls.append(slider(lbl, k, S.state.lat[k], 0, 1, 0.01, v => { S.state.lat[k] = v; render(); }));
+  g5.ctrls.append(slider("BỔ SUNG (E27): mức kéo mũi tên đảo chiều. Cần bật cờ tương ứng.", "r_rev·đảo",
+    S.state.reversal, 0, 1, 0.01, v => { S.state.reversal = v; render(); }));
+  p.append(g5);
+
+  const g0 = group("Layer 0 — mức chỉ số các kênh", "E9 · bracket",
+    "Mỗi kênh là một số chỉ số bằng 1 tại kỳ gốc (Assumption 2.1). Cầu tăng ⟹ DXY tăng; cung tăng ⟹ DXY giảm. Không ngoại lệ nào trong cả cuốn sách.");
+  for (const c of DEMAND.concat([{k:"prec", s:PREC.s, vi:PREC.vi}], SUPPLY))
+    g0.ctrls.append(slider(c.vi, c.s, S.state.ch[c.k], 0.5, 2.0, 0.005,
+      v => { S.state.ch[c.k] = v; render(); }));
+  p.append(g0);
+}
+
+/* ---- tab: trọng số ----------------------------------------------------- */
+function tabWeights(p, rc){
+  const blocks = [];
+  W.forEach(w => { if (!blocks.includes(w[2])) blocks.push(w[2]); });
+
+  const hdr = el("div","grp");
+  hdr.append(el("div","eyebrow","Layer W · E17"));
+  hdr.append(Object.assign(el("p","dim"),{textContent:
+    "Thanh trượt đặt GIÁ TRỊ NỀN w⁰. Luật tương tác rồi dịch nó khỏi đó theo trạng thái hiện tại; nơi nào đã dịch, giá trị sau tương tác hiện lên màu nhấn bên cạnh. Logistic ánh xạ NGẶT vào (lo, hi), nên không số hạng tương tác nào đẩy được một trọng số ra khỏi vùng của nó — mọi biên mà ISSUES #9, #14, #26 và #3a áp đặt đều sống sót."}));
+  const warnEdge = el("div","note","Một trọng số bị đẩy sát biên vùng của nó sẽ ĐÓNG BĂNG: ℓ_k tiến tới ±∞ và không tương tác nào dịch được nó. Đó là đúng — nó đã ở đúng cái biên sách áp đặt — nhưng nghĩa là một thanh trượt ghim ở cuối dải sẽ tắt tương tác của trọng số đó.");
+  hdr.append(warnEdge);
+  p.append(hdr);
+
+  for (const blk of blocks){
+    const g = group(blk, null, null);
+    for (const k in WK){
+      const w = WK[k]; if (w.block !== blk) continue;
+      const cur = (S.over[k] !== undefined) ? S.over[k] : w.base;
+      const eff = rc.W[k];
+      const moved = Math.abs(eff - cur) > Math.max(1e-9, 1e-4*(w.hi - w.lo));
+      const step = (w.hi - w.lo) / 400;
+      const sub = (moved ? "sau tương tác → " + eff.toFixed(3) + "   ·   " : "")
+                + w.prov + "  ·  " + w.ev;
+      const c = slider(w.vi, w.sym, cur, w.lo, w.hi, step,
+        v => { S.over[k] = v; render(); },
+        {zone:[w.lo.toFixed(2), w.hi.toFixed(2)], moved, sub});
+      if (w.note){
+        const n = el("div","dim", w.note);
+        n.style.marginTop = "4px"; n.style.fontSize = "11.5px"; c.append(n);
+      }
+      g.ctrls.append(c);
+    }
+    p.append(g);
+  }
+
+  const reset = el("button","chip","Trả mọi trọng số về giá trị nền của sách");
+  reset.type = "button"; reset.onclick = () => { S.over = {}; render(); };
+  p.append(reset);
+}
+
+/* ---- tab: tương tác ---------------------------------------------------- */
+function tabInter(p, rc){
+  const g = group("Ghép cặp trọng số", "E18 · E19",
+    "Mỗi ô dưới đây phát biểu một cơ chế mà sách lập luận. Không ô nào được thêm vì đối xứng hay vì một cặp nhìn hợp lý: một ghép cặp không có cơ chế là một tham số tự do không có bằng chứng.");
+  g.ctrls.remove();
+
+  const st = el("div");
+  st.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px";
+  const okC = rc.sol.cnorm < 4;
+  st.append(Object.assign(el("span","pill" + (okC ? " on" : "")),
+    {innerHTML:"‖C‖∞ <b>" + rc.sol.cnorm.toFixed(3) + "</b> " + (okC ? "< 4 ✓ duy nhất" : "≥ 4 ✗ KHÔNG duy nhất")}));
+  st.append(Object.assign(el("span","pill"),
+    {innerHTML:"Khuếch đại tham số A_W <b>" + (isFinite(rc.sol.amp) ? rc.sol.amp.toFixed(3) : "∞") + "</b>"}));
+  st.append(Object.assign(el("span","pill"), {innerHTML:"Số vòng lặp <b>" + rc.sol.iters + "</b>"}));
+  g.append(st);
+
+  g.append(Object.assign(el("div","note"), {innerHTML:
+    "<b>Mệnh đề W.2.</b> Jacobian có phần tử Λ′(d_k)·C_kj, bị chặn bởi |C_kj|/4 vì Λ′ ≤ ¼. Nên max_k Σ_j |C_kj| &lt; 4 khiến ánh xạ là co rút: điểm bất động duy nhất, hút toàn cục, đạt tới theo cấp số nhân. Đó là ĐÚNG DẠNG cận của Proposition 8.2 (η·κ_A·g₁ &lt; 4) cho một vòng lặp khác — cả hai rơi ra từ một sự thật duy nhất, rằng Λ′ ≤ ¼. Sách có một hình chữ S, nên nó có một hằng số co rút."}));
+  g.append(Object.assign(el("div","note"), {innerHTML:
+    "<b>Hệ quả W.3.</b> Con số mà §17.4 gọi là “cho ‘siêu giòn’ một con số” có bản sao ở đây: A_W = 1/(1 − ‖C‖∞/4), nhân hiệu ứng của mọi tải trọng và phân kỳ khi hệ trọng số tiến tới cùng cái biên đó. Một mô hình hoá mà các trọng số phản ứng mạnh với nhau thì GIÒN đúng theo nghĩa sách dùng cho thị trường."}));
+  p.append(g);
+
+  const list = el("div");
+  list.style.marginTop = "6px";
+  for (let i = 0; i < S.cpl.length; i++){
+    const [a, b, v, mech] = S.cpl[i];
+    const row = el("div","cpl");
+    const lab = el("div");
+    lab.append(Object.assign(el("span","cpl-k"), {textContent: WK[b].sym + "  →  " + WK[a].sym}));
+    lab.append(el("div","dim", WK[b].block + " → " + WK[a].block));
+    const box = el("div");
+    const r = document.createElement("input");
+    r.type = "range"; r.min = -1; r.max = 1; r.step = 0.01; r.value = v;
+    r.setAttribute("aria-label", "Ghép cặp " + WK[b].sym + " sang " + WK[a].sym);
+    const out = el("div","val num", (v >= 0 ? "+" : "") + v.toFixed(2));
+    out.style.textAlign = "right";
+    r.oninput = () => { S.cpl[i][2] = parseFloat(r.value); render(); };
+    box.append(out, r);
+    row.append(lab, box);
+    row.append(el("div","mech", mech));
+    list.append(row);
+  }
+  p.append(list);
+
+  const gs = group("Tải trọng trạng thái γ", "E17",
+    "Tải trọng tác động lên ĐỘ LỆCH (z − z⁰) khỏi trạng thái nền Table 10.3, không lên mức. Nhờ vậy, tại trạng thái nền mọi trọng số bằng đúng giá trị sách công bố DÙ tải trọng lớn đến đâu — và một tải trọng đọc thành hiệu ứng của việc dịch biến điều biến một đơn vị đầy đủ khỏi nền.");
+  gs.ctrls.remove();
+  const tb = el("div","tscroll");
+  const t = el("table");
+  t.innerHTML = "<thead><tr><th>Trọng số</th><th>Biến điều biến</th><th class='n'>γ</th>"
+              + "<th class='n'>z hiện tại</th><th class='n'>z⁰</th><th class='n'>đóng góp</th></tr></thead>";
+  const tb2 = el("tbody");
+  const zc = {sigma:rc.sg.sigma, phi:clamp(rc.phi/2), sus:rc.sus, hsoc:rc.psy.H,
+              iimp:rc.psy.I, fhard:rc.fh, rus:S.state.lat.R_US, psi:clamp(1-rc.psi)};
+  for (const k in WK){
+    const w = WK[k];
+    for (const m in w.g1){
+      const tr = el("tr");
+      tr.append(Object.assign(el("td"),{innerHTML:"<span class='mono'>"+w.sym+"</span>"}));
+      tr.append(el("td", null, m));
+      tr.append(el("td","n", (w.g1[m] >= 0 ? "+" : "") + w.g1[m].toFixed(2)));
+      tr.append(el("td","n", zc[m].toFixed(3)));
+      tr.append(el("td","n", Z0[m].toFixed(3)));
+      const contrib = w.g1[m]*(zc[m] - Z0[m]);
+      tr.append(el("td","n", (contrib >= 0 ? "+" : "") + contrib.toFixed(4)));
+      tb2.append(tr);
+    }
+    for (const pq in w.g2){
+      const [m,n] = pq.split("|");
+      const tr = el("tr");
+      tr.append(Object.assign(el("td"),{innerHTML:"<span class='mono'>"+w.sym+"</span>"}));
+      tr.append(el("td", null, m + " × " + n));
+      tr.append(el("td","n", (w.g2[pq] >= 0 ? "+" : "") + w.g2[pq].toFixed(2)));
+      tr.append(el("td","n", zc[m].toFixed(3)));
+      tr.append(el("td","n", Z0[m].toFixed(3)));
+      const contrib = w.g2[pq]*(zc[m]-Z0[m])*(zc[n]-Z0[n]);
+      tr.append(el("td","n", (contrib >= 0 ? "+" : "") + contrib.toFixed(4)));
+      tb2.append(tr);
+    }
+  }
+  t.append(tb2); tb.append(t); gs.append(tb);
+  p.append(gs);
+
+  const gf = group("Cờ mở rộng", null,
+    "Mỗi cờ đóng một khiếm khuyết mà CHÍNH Chương 17 đặt tên. Tất cả TẮT mặc định: bật một cái là một sự rời khỏi sách, và engine bắt bạn tự quyết định điều đó.");
+  gf.ctrls.remove();
+  const fl = el("div","flags");
+  const FLAGS = [
+    ["state","Layer W: phụ thuộc trạng thái (E17)","Tắt để trả mọi trọng số về hằng số như trong sách."],
+    ["couple","Layer W: ghép cặp trọng số (E18)","Tắt để các trọng số không phản ứng với nhau."],
+    ["recentre","Tái định tâm độ lồi — đóng I37","Neo số hạng lồi lên trạng thái VÀO của đợt. Sách: “đây là tính chất của dạng hàm, không phải của ước lượng, nên không ước lượng lại λ₂ nào gỡ được.”"],
+    ["regimeLambda","λ₁ chuyển chế độ — Remark 11.3","Chính thiết bị Λ(σ) của sách, áp lên chính vấn đề của sách: λ₁ nhận dấu ngược nhau ở hai chế độ."],
+    ["returnPath","Đường về Layer 5 → Layer 4 — đóng I32","Số hạng (1 + b_F·f_hard) mà sách VIẾT RA rồi từ chối thêm, vì nó sẽ là tham số bất khả ước lượng thứ tám."],
+    ["reversal","Kênh đảo chiều — đóng I34","Mũi tên hạ S_off và T_frag: cưỡng chế chấm dứt cưỡng chế. Đồ thị dấu không chứa mũi tên nào như vậy."],
+    ["healthLeg","Nhánh sốc phi quân sự (E25)","GPRD đo chiến tranh và khủng bố, không đo đại dịch. “Bổ sung dữ liệu giá trị nhất còn lại cho tầng này.”"],
+    ["splitPrec","Tách D_prec theo đường cong — đóng I40","Kỳ hạn hai năm giữ được tính trú ẩn mà kỳ hạn ba mươi năm đã mất."],
+    ["fundingHaven","Số hạng trú ẩn chạy theo nhánh funding","§17.4: nhánh funding hồi quy ở t = +5,04 trong khi composite tệ hơn chính thành phần ma sát của nó."],
+    ["sIn","s_US nằm TRONG cơ số (ISSUES #8 / §6.7.2)","Tắt để dùng dạng số mũ in trong Equation (10.2). Hai chỗ này của sách mâu thuẫn nhau; dạng trong cơ số có giới hạn đúng khi s_US → 0."],
+  ];
+  for (const [k, title, desc] of FLAGS){
+    const lab = el("label","flag");
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = !!S.opt[k]; cb.id = "fl_" + k;
+    cb.onchange = () => { S.opt[k] = cb.checked; if (k === "recentre") S.opt.anchor = null; render(); };
+    const txt = el("div");
+    txt.append(el("div","fl-t", title), el("span","fl-d", desc));
+    lab.append(cb, txt); fl.append(lab);
+  }
+  gf.append(fl); p.append(gf);
+}
+
+/* ---- tab: tỉ lệ & vùng -------------------------------------------------- */
+function weightShares(stateObj, opt){
+  const rows = [];
+  for (const k in WK){
+    const w = WK[k], span = w.hi - w.lo; if (span <= 0) continue;
+    const b = (S.over[k] !== undefined) ? S.over[k] : w.base;
+    const h = Math.max(span*0.01, 1e-9);
+    const lo = Math.max(b - h, w.lo + 1e-12), hi = Math.min(b + h, w.hi - 1e-12);
+    if (hi <= lo) continue;
+    const o1 = Object.assign({}, S.over); o1[k] = lo;
+    const o2 = Object.assign({}, S.over); o2[k] = hi;
+    const a = run(stateObj, o1, opt, S.cpl).lnD, c = run(stateObj, o2, opt, S.cpl).lnD;
+    if (!isFinite(a) || !isFinite(c)) continue;
+    const d = (c - a)/(hi - lo), scaled = d*span;
+    rows.push({k, sym:w.sym, block:w.block, prov:w.prov, ev:w.ev, scaled, share:0});
+  }
+  const tot = rows.reduce((s, r) => s + Math.abs(r.scaled), 0) || 1;
+  rows.forEach(r => r.share = Math.abs(r.scaled)/tot);
+  rows.sort((a, b) => b.share - a.share);
+  return rows;
+}
+function tornado(stateObj, opt){
+  const rows = [];
+  for (const k in WK){
+    const w = WK[k], span = w.hi - w.lo; if (span <= 0) continue;
+    const lo = w.lo + 0.02*span, hi = w.hi - 0.02*span;
+    const o1 = Object.assign({}, S.over); o1[k] = lo;
+    const o2 = Object.assign({}, S.over); o2[k] = hi;
+    const a = run(stateObj, o1, opt, S.cpl).lnD, c = run(stateObj, o2, opt, S.cpl).lnD;
+    if (!isFinite(a) || !isFinite(c)) continue;
+    rows.push({k, sym:w.sym, block:w.block, lo, hi, a, c, swing:c - a});
+  }
+  rows.sort((x, y) => Math.abs(y.swing) - Math.abs(x.swing));
+  return rows;
+}
+
+function tabShare(p, rc, opt){
+  const {cur} = currentStates();
+  const rows = weightShares(cur, opt);
+
+  const g = group("Tỉ lệ trọng số", "E20",
+    "sₖ = |(∂lnDXY/∂wₖ)·(hi−lo)| chuẩn hoá trên mọi trọng số. Nhân với DẢI KHẢ DỤNG của chính trọng số là thứ làm các tỉ lệ so sánh được: đạo hàm thô nằm trong đơn vị của w, và các trọng số ở đây thuộc sáu loại đơn vị khác nhau. Nhân với dải đặt MỘT câu hỏi cho tất cả — bao nhiêu phần của dự báo thuộc trách nhiệm VÙNG của trọng số này.");
+  g.ctrls.remove();
+
+  const agg = {};
+  rows.forEach(r => agg[r.block] = (agg[r.block] || 0) + r.share);
+  const aggArr = Object.entries(agg).sort((a, b) => b[1] - a[1]);
+  const maxAgg = aggArr.length ? aggArr[0][1] : 1;
+
+  const tb0 = el("div","tscroll");
+  const t0 = el("table");
+  t0.innerHTML = "<thead><tr><th>Gộp theo phương trình</th><th class='n'>Tỉ lệ</th><th style='width:38%'></th></tr></thead>";
+  const b0 = el("tbody");
+  for (const [blk, v] of aggArr){
+    const tr = el("tr");
+    tr.append(el("td", null, blk), el("td","n", (100*v).toFixed(2) + "%"));
+    const td = el("td");
+    const m = el("span","meter"); const i = el("i"); i.style.width = (100*v/maxAgg).toFixed(1) + "%";
+    m.append(i); td.append(m); tr.append(td); b0.append(tr);
+  }
+  t0.append(b0); tb0.append(t0); g.append(tb0);
+  p.append(g);
+
+  const g2 = group("Từng trọng số", null, null);
+  g2.ctrls.remove();
+  const tb = el("div","tscroll");
+  const t = el("table");
+  t.innerHTML = "<thead><tr><th>Trọng số</th><th>Phương trình</th><th>Nguồn gốc</th>"
+              + "<th>Bằng chứng</th><th class='n'>Hướng</th><th class='n'>Tỉ lệ</th>"
+              + "<th style='width:22%'></th></tr></thead>";
+  const bd = el("tbody");
+  const mx = rows.length ? rows[0].share : 1;
+  for (const r of rows.slice(0, 26)){
+    if (r.share < 1e-5) continue;
+    const tr = el("tr");
+    tr.append(Object.assign(el("td"),{innerHTML:"<span class='mono'>"+r.sym+"</span>"}));
+    tr.append(el("td", null, r.block));
+    tr.append(Object.assign(el("td","dim"),{textContent:r.prov}));
+    tr.append(Object.assign(el("td"),{innerHTML:"<span class='tag t-"+r.ev+"'>"+r.ev+"</span>"}));
+    tr.append(el("td","n", r.scaled > 0 ? "↑" : (r.scaled < 0 ? "↓" : "·")));
+    tr.append(el("td","n", (100*r.share).toFixed(2) + "%"));
+    const td = el("td");
+    const m = el("span","meter" + (r.scaled < 0 ? " neg" : ""));
+    const i = el("i"); i.style.width = (100*r.share/mx).toFixed(1) + "%";
+    m.append(i); td.append(m); tr.append(td); bd.append(tr);
+  }
+  t.append(bd); tb.append(t); g2.append(tb);
+  p.append(g2);
+
+  const g3 = group("Vùng tuỳ biến", null,
+    "Biên độ của lnDXY khi quét từng trọng số trên TOÀN dải khả dụng của nó, mỗi lần một trọng số. Đây là cách đọc trực tiếp của “vùng tuỳ biến”: không phải một đạo hàm tại một điểm, mà cả khoảng mà tham số được phép nhận — đúng câu hỏi cần đặt khi tham số chưa bao giờ được ước lượng.");
+  g3.ctrls.remove();
+  const trows = tornado(cur, opt);
+  const tmax = trows.length ? Math.abs(trows[0].swing) : 1;
+  const tb3 = el("div","tscroll");
+  const t3 = el("table");
+  t3.innerHTML = "<thead><tr><th>Trọng số</th><th>Phương trình</th><th class='n'>tại lo</th>"
+               + "<th class='n'>tại hi</th><th class='n'>biên độ lnDXY</th><th style='width:24%'></th></tr></thead>";
+  const b3 = el("tbody");
+  for (const r of trows.slice(0, 18)){
+    const tr = el("tr");
+    tr.append(Object.assign(el("td"),{innerHTML:"<span class='mono'>"+r.sym+"</span>"}));
+    tr.append(el("td", null, r.block));
+    tr.append(el("td","n", r.a.toFixed(4)));
+    tr.append(el("td","n", r.c.toFixed(4)));
+    tr.append(el("td","n", (r.swing >= 0 ? "+" : "") + r.swing.toFixed(4)));
+    const td = el("td");
+    const m = el("span","meter" + (r.swing < 0 ? " neg" : ""));
+    const i = el("i"); i.style.width = (100*Math.abs(r.swing)/tmax).toFixed(1) + "%";
+    m.append(i); td.append(m); tr.append(td); b3.append(tr);
+  }
+  t3.append(b3); tb3.append(t3); g3.append(tb3);
+  p.append(g3);
+
+  const top = aggArr[0], second = aggArr[1];
+  if (top){
+    p.append(Object.assign(el("div","note add"), {innerHTML:
+      "<b>Kết quả đầu tiên mà việc này tạo ra.</b> Tại trạng thái hiện tại, "
+      + "<span class='mono'>" + top[0] + "</span> mang " + (100*top[1]).toFixed(1) + "% độ nhạy tham số"
+      + (second ? ", và <span class='mono'>" + second[0] + "</span> mang thêm " + (100*second[1]).toFixed(1) + "%" : "")
+      + ". Ở trạng thái nền, hai mục đứng đầu là E8·Ψ_str và bộ tổng hợp f_hard — tức tầng mà Chương 17 tuyên bố KHÔNG KIỂM CHỨNG ĐƯỢC, cộng một bộ tổng hợp mà SÁCH CHƯA TỪNG VIẾT RA. Vì f_hard không có phép đo (Proposition 9.3), một nửa độ nhạy của mô hình nằm sau một tham số mà không quan sát nào chạm tới. Đó không phải lý do bỏ mô hình; đó là lý do để §17.8 hạng mục ba — xây C_alt, và xây rộng hơn bản gốc định nghĩa — đứng đầu danh sách thay vì đứng thứ ba."}));
+  }
+}
+
+/* ---- tab: kiểm tra ------------------------------------------------------ */
+function tabCheck(p, rb, rc){
+  const W_ = rc.W;
+  const checks = [
+    ["κ_R < 1 (κ_sys > 0)", W_.kappa_R < 1, W_.kappa_R, "< 1", 1 - W_.kappa_R, "Assumption 7.2"],
+    ["Φ_sys > 0 (không đổi dấu số hạng trú ẩn)", rc.phi > 0, rc.phi, "> 0", rc.phi, "Assumption 2.5 / §6.6.5"],
+    ["η·κ_A·g₁ < 4 (điểm bất động Layer 4 duy nhất)", rc.psy.contraction < 4, rc.psy.contraction, "< 4", 4 - rc.psy.contraction, "Proposition 8.2"],
+    ["g₀ + g₁ ≤ 1 (I_imp ∈ [0,1])", rc.psy.g0 + rc.psy.g1 <= 1 + 1e-9, rc.psy.g0 + rc.psy.g1, "≤ 1", 1 - rc.psy.g0 - rc.psy.g1, "Assumption 8.3"],
+    ["max_k Σ_j |C_kj| < 4 (hệ trọng số duy nhất)", rc.sol.cnorm < 4, rc.sol.cnorm, "< 4", 4 - rc.sol.cnorm, "E19 — bổ sung"],
+    ["σ_sys ∈ [0,1]", rc.sg.sigma >= 0 && rc.sg.sigma <= 1, rc.sg.sigma, "∈ [0,1]", Math.min(rc.sg.sigma, 1 - rc.sg.sigma), "ISSUES #9"],
+    ["Ψ_str ≥ 1 − L_max = " + (1 - W_.L_max).toFixed(3), rc.psi >= 1 - W_.L_max - 1e-9, rc.psi, "≥ sàn", rc.psi - (1 - W_.L_max), "ISSUES #14"],
+    ["λ₁ < 0 < λ₂ (điều kiện có nụ cười đô la)", W_.lam_1 < 0 && W_.lam_2 > 0, W_.lam_1, "λ₁ < 0", -W_.lam_1, "Proposition 10.3"],
+    ["κ_sys trong dải đã chạy của sách", rc.kap.k >= 1 && rc.kap.k <= 2.2, rc.kap.k, "∈ [1,0; 2,2]", Math.min(rc.kap.k - 1, 2.2 - rc.kap.k), "Table 10.3 / §10.7.5"],
+  ];
+  const g = group("Ràng buộc cấu trúc", null,
+    "Các biên của sách không phải trang trí: κ_R ≥ 1 đảo ngược mô hình, Φ_sys ≤ 0 lật dấu toàn bộ số hạng trú ẩn, η·κ_A·g₁ ≥ 4 nghĩa là engine đang đứng trên MỘT trong ba nhánh mà không nói là nhánh nào. §10.7 nói Chương 10 “phải kiểm tra” những điều này.");
+  g.ctrls.remove();
+  for (const [lbl, ok, v, bd, slack, src] of checks){
+    const row = el("div","check " + (ok ? "ok" : "no"));
+    row.append(el("div","m", ok ? "✓" : "✗"));
+    const mid = el("div");
+    mid.append(el("div", null, lbl));
+    mid.append(el("div","src", src));
+    row.append(mid);
+    row.append(Object.assign(el("div","num"),
+      {textContent: v.toFixed(4) + "  (" + bd + ", dư " + (slack >= 0 ? "+" : "") + slack.toFixed(4) + ")"}));
+    g.append(row);
+  }
+  p.append(g);
+
+  if (rc.warn.length){
+    const gw = group("Cảnh báo", null, null); gw.ctrls.remove();
+    rc.warn.forEach(w => gw.append(el("div","note alert", w)));
+    p.append(gw);
+  }
+
+  const gs = group("Phản ứng với stress — ba thành phần, không phải một", "Equation (10.7)",
+    "Chương 5 ước lượng một dạng rút gọn chứa cả ba cùng lúc và không tách được chúng, nên Proposition 5.2 không phân xử được giữa các cách đọc cạnh tranh.");
+  gs.ctrls.remove();
+  const d = rc.dSigma;
+  const tbs = el("div","tscroll"); const ts = el("table");
+  ts.innerHTML = "<thead><tr><th>Thành phần</th><th>Cơ chế</th><th class='n'>∂lnDXY/∂σ</th></tr></thead>";
+  const bs = el("tbody");
+  for (const [n, m, v] of [
+      ["trú ẩn trực tiếp","(λ₁ + 2λ₂σ)·Φ_sys", d.direct],
+      ["phản thân","(∂κ/∂σ)·ln(D*/S*) = a_σκ/(1+a_σσ) · ln bracket", d.refl],
+      ["chuyển chế độ","κ·Σ(∂α_i/∂σ)·ln D_i − …", d.reg],
+      ["TỔNG","", d.total]]){
+    const tr = el("tr");
+    tr.append(el("td", null, n), Object.assign(el("td","dim"),{textContent:m}),
+              el("td","n", (v >= 0 ? "+" : "") + v.toFixed(4)));
+    bs.append(tr);
+  }
+  ts.append(bs); tbs.append(ts); gs.append(tbs);
+  gs.append(Object.assign(el("div","note"), {innerHTML: rc.smile === null
+    ? "<b>Không có nụ cười đô la trên bộ tham số này.</b> Proposition 10.3: một sự đổi dấu cần λ₁ &lt; 0. Độ lồi λ₂ &gt; 0 một mình KHÔNG thể tạo đổi dấu; nó chỉ làm dốc thêm một phản ứng vốn đã dương. Và Φ_sys &gt; 0 nhân toàn bộ biểu thức, nên một chế độ mà đô la không còn là nơi trú ẩn đáng tin LÀM PHẲNG phản ứng về không chứ không đảo ngược nó — mô hình không có cơ chế nào cho một đồng đô la thực sự risk-on."
+    : "<b>σ† = " + rc.smile.toFixed(3) + "</b> — phản ứng đổi dấu tại đây."}));
+  p.append(gs);
+
+  const gc = group("Kênh dẫn", null,
+    "Mỗi mũi tên mang theo phán quyết Chương 17 của kênh mà nó chạy qua. Engine không in một mũi tên mà không kèm tình trạng bằng chứng.");
+  gc.ctrls.remove();
+  const bt = {}; rb.terms.forEach(t => bt[t.k] = t);
+  const moves = [];
+  for (const t of rc.terms){
+    const t0 = bt[t.k]; if (!t0) continue;
+    if (Math.abs(t.lv - t0.lv) < 1e-12 && Math.abs(t.lc - t0.lc) < 1e-12) continue;
+    moves.push({t, t0, d: rc.kap.k*t.lc - rb.kap.k*t0.lc});
+  }
+  moves.sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
+  if (!moves.length) gc.append(el("p","dim","Không kênh nào dịch chuyển ở trạng thái hiện tại."));
+  else {
+    const tbc = el("div","tscroll"); const tc = el("table");
+    tc.innerHTML = "<thead><tr><th>Kênh</th><th>Mức</th><th class='n'>ε(σ)</th>"
+                 + "<th class='n'>DXY</th><th>Bằng chứng</th></tr></thead>";
+    const bc = el("tbody");
+    for (const m of moves){
+      const a = arrowOf(m.d);
+      const tr = el("tr");
+      const c1 = el("td");
+      c1.append(Object.assign(el("span","mono"),{textContent:m.t.s}));
+      c1.append(el("div","dim", m.t.vi));
+      tr.append(c1);
+      tr.append(el("td","n", m.t0.lv.toFixed(3) + " → " + m.t.lv.toFixed(3)));
+      tr.append(el("td","n", (m.t.side === "D" ? "+" : "−") + Math.abs(m.t.e).toFixed(3)));
+      tr.append(el("td","n", a.g + " " + (a.pct >= 0 ? "+" : "") + a.pct.toFixed(2) + "%"));
+      const c5 = el("td");
+      c5.append(Object.assign(el("span","tag t-" + m.t.ev),{textContent:m.t.ev}));
+      c5.append(el("div","dim", EVNOTE[m.t.ev] || ""));
+      tr.append(c5);
+      bc.append(tr);
+    }
+    tc.append(bc); tbc.append(tc); gc.append(tbc);
+  }
+  p.append(gc);
+
+  p.append(Object.assign(el("div","note alert"), {innerHTML:
+    "<b>Dư số không giải thích được.</b> Trên hai cuộc khủng hoảng trung tâm, mô hình giải thích +6,59 trên +18,33% của 2008 và +1,85 trên +7,54% của 2020 — dư số 64% và 76% (Table 11.7). Khối mà kiến trúc đặt ở trung tâm một cuộc khủng hoảng lại đóng góp ÍT NHẤT trong hai khối có dịch chuyển, và dư số không bám theo bất kỳ chênh lệch funding đo được nào. Ứng viên tốt nhất để giải thích nó là một κ_sys phụ thuộc trạng thái — tức chính đại lượng mà Proposition 11.1 tuyên bố không thể nhận dạng. Mọi con số bàn điều khiển này in ra nên được đọc cùng với dư số đó."}));
+}
+
+/* ---- tab: về engine ----------------------------------------------------- */
+function tabAbout(p, rc){
+  const g = group("Trạng thái nền tái tạo Table 10.3", null,
+    "Mặc định của engine ĐÚNG LÀ trạng thái nền của sách, tái tạo theo từng số hạng chứ không phải xấp xỉ.");
+  g.ctrls.remove();
+  const rows = [["σ_sys","0,35",rc.sg.sigma.toFixed(3)], ["Φ_sys","0,70",rc.phi.toFixed(3)],
+    ["s_US,sys","0,70",rc.sus.toFixed(3)], ["f_hard","0,34",rc.fh.toFixed(3)],
+    ["H_soc = I_imp","0,30",rc.psy.H.toFixed(3) + " / " + rc.psy.I.toFixed(3)],
+    ["k_Ψ","6",rc.kpsi.toFixed(3)], ["Ψ_str","—",rc.psi.toFixed(4)],
+    ["κ_sys","dải 1,2–2,0",rc.kap.k.toFixed(3)]];
+  const tb = el("div","tscroll"); const t = el("table");
+  t.innerHTML = "<thead><tr><th>Đại lượng</th><th class='n'>Sách nói</th><th class='n'>Engine</th></tr></thead>";
+  const b = el("tbody");
+  rows.forEach(([a, c, d]) => { const tr = el("tr");
+    tr.append(el("td", null, a), el("td","n", c), el("td","n", d)); b.append(tr); });
+  t.append(b); tb.append(t); g.append(tb);
+  g.append(Object.assign(el("div","note"), {innerHTML:
+    "<b>Một.</b> H_soc = I_imp = 0,30 ở đây là ĐIỂM BẤT ĐỘNG THẬT của Equation (8.8), không phải một cặp áp đặt bên cạnh nó. Table 10.3 áp đặt chúng; Chương 8 nói chúng LÀ điểm bất động. Hai điều đó chỉ tương thích với những giá trị nhất định của R_div, c_L0, c_L1 — và cả ba đều OPEN. Engine chọn bộ khiến chúng tương thích (R_div = 0,3275; c_L0 = 0,80; c_L1 = 1,18) và phát biểu lựa chọn đó thay vì giấu nó."}));
+  g.append(Object.assign(el("div","note"), {innerHTML:
+    "<b>Hai.</b> κ_sys = 1,22 của sách KHÔNG tái tạo chính xác được, vì Table 10.3 nêu năm trong bảy hệ số của κ_sys và bỏ qua a_V và a_A. Engine đặt chúng nhỏ thay vì bịa, và kết quả rơi vào đúng dải mà chính sách nêu."}));
+  p.append(g);
+
+  const g2 = group("Ba thứ engine từ chối làm", null, null);
+  g2.ctrls.remove();
+  for (const [t_, d_] of [
+    ["Không giấu nguồn gốc của một con số.",
+     "Mỗi tham số mang một nhãn: BOOK_STATED (in trong sách), BOOK_IMPLIED (bị ép bởi ví dụ của chính sách), BOOK_QUALITATIVE (sách nêu hướng chứ không nêu số), ENGINE_CONVENTION (engine cấp để chạy được), OPEN (khai báo, chặn, định dấu, không bao giờ cho giá trị — 42 trên 55 tham số của mô hình gốc)."],
+    ["Không in một mũi tên mà không kèm tình trạng bằng chứng.",
+     "Mỗi kênh mang phán quyết Chương 17 của nó. Chuỗi X_pand ⇒ σ_sys ⇒ DXY hiện ra là REFUTED, vì nó thất bại trong ba đợt độc lập bao trùm cả dải — cú sốc vắng mặt (chiến tranh thương mại 2018), cú sốc đảo chiều (cấm vận năng lượng 2022) và cú sốc cực đoan (Iran 2026)."],
+    ["Không chỉnh cho khớp.",
+     "§10.7.5 báo cáo rằng chính mô phỏng của sách TRƯỢT một kiểm tra tỉnh táo: đỉnh thanh khoản +17,7% lớn hơn khoảng một phần tư so với bất cứ gì đồng đô la từng làm. Engine tái tạo cả hành vi LẪN phần vượt, vì tách chúng ra nghĩa là chỉnh đi mất đúng con số mà §10.7.5 yêu cầu người đọc giữ lại."]])
+  { const n = el("div","note"); n.innerHTML = "<b>" + t_ + "</b> " + d_; g2.append(n); }
+  p.append(g2);
+
+  const g3 = group("Một căng thẳng nội tại phát hiện khi chạy", null, null);
+  g3.ctrls.remove();
+  g3.append(Object.assign(el("div","note alert"), {innerHTML:
+    "§10.7.4 nói H_soc “nhảy qua separatrix”. Nhưng Assumption 8.4 duy trì η &lt; 4 xuyên suốt Phần I–III, và dưới ngưỡng đó Proposition 8.2 bảo đảm điểm bất động là DUY NHẤT và hút toàn cục — tức KHÔNG CÓ separatrix nào để nhảy. Engine chạy đúng theo Assumption 8.4, nên trong kịch bản tự sự H_soc TRÔI tới ~0,77 thay vì nhảy, và k_Ψ tới ~19 thay vì 28. Muốn đúng con số của sách thì phải đặt η ≥ 4, và khi đó engine cảnh báo rằng kết quả đang đứng trên một trong ba nhánh."}));
+  p.append(g3);
+
+  const g4 = group("Các phương trình mà engine thêm vào", null,
+    "Đánh số tiếp nối hệ của sách: E1–E16 là của sách, E17–E28 là của phần mở rộng.");
+  g4.ctrls.remove();
+  const E = [
+    ["E17","Ánh xạ trọng số bị chặn","mọi trọng số thành một hàm bị chặn của độ lệch khỏi trạng thái nền"],
+    ["E18","Hệ đồng thời của các trọng số","các trọng số phản ứng với nhau; nghiệm là một điểm bất động"],
+    ["E19","Tồn tại, duy nhất, khuếch đại","Brouwer cho tồn tại vô điều kiện; ‖C‖∞ < 4 cho duy nhất; A_W = 1/(1−‖C‖∞/4)"],
+    ["E20","Tỉ lệ trọng số","đạo hàm nhân dải khả dụng, chuẩn hoá — câu hỏi một đơn vị cho sáu loại tham số"],
+    ["E21","λ₁ chuyển chế độ","đóng Remark 11.3"],
+    ["E22","Tái định tâm độ lồi","đóng I37"],
+    ["E23","w_X co giãn theo tần suất","đóng khoảng cách AR(1) của Table 5.5"],
+    ["E24","Bộ tổng hợp f_hard, với C_alt mở rộng sang vàng","đóng Assumption 9.1 và §17.6.3"],
+    ["E25","Nhánh ngoại sinh phi quân sự","đóng §5.5.3"],
+    ["E26","Đường về Layer 5 → Layer 4","đóng I32"],
+    ["E27","Kênh đảo chiều cưỡng chế","đóng I34"],
+    ["E28","Tách D_prec theo đường cong","đóng I40"],
+  ];
+  const tb4 = el("div","tscroll"); const t4 = el("table");
+  t4.innerHTML = "<thead><tr><th>PT</th><th>Phát biểu</th><th>Đóng khiếm khuyết nào</th></tr></thead>";
+  const b4 = el("tbody");
+  E.forEach(([a, c, d]) => { const tr = el("tr");
+    tr.append(Object.assign(el("td","mono"),{textContent:a}), el("td", null, c),
+              Object.assign(el("td","dim"),{textContent:d})); b4.append(tr); });
+  t4.append(b4); tb4.append(t4); g4.append(tb4);
+  p.append(g4);
+}
+
+/* ---- render ------------------------------------------------------------ */
+function render(){
+  const {rb, rc, opt} = compute();
+  paintRail(rb, rc);
+  paintTabs();
+  const p = $("#panel"); p.textContent = "";
+  if (S.tab === "state")   tabState(p, rc);
+  if (S.tab === "weights") tabWeights(p, rc);
+  if (S.tab === "inter")   tabInter(p, rc);
+  if (S.tab === "share")   tabShare(p, rc, opt);
+  if (S.tab === "check")   tabCheck(p, rb, rc);
+  if (S.tab === "about")   tabAbout(p, rc);
+}
+
+/* ---- theme toggle ------------------------------------------------------- */
+(function(){
+  const btn = $("#theme");
+  let mode = null;
+  try { mode = localStorage.getItem("amr-theme"); } catch(e){}
+  if (mode) document.documentElement.setAttribute("data-theme", mode);
+  btn.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
+  btn.onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const next = cur ? (cur === "dark" ? "light" : "dark") : (dark ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", next);
+    btn.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
+    try { localStorage.setItem("amr-theme", next); } catch(e){}
+  };
+})();
+
+render();
+</script>

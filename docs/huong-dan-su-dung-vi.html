@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn sử dụng — Bảng trực quan hình học mô hình sáu tầng</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#ffffff; --fg:#182230; --muted:#5c6878; --line:#d7dee7; --line2:#eef2f6;
+    --panel:#f7f9fb; --accent:#157f8e; --accent2:#b4631c; --code:#0f151c;
+    --ff-d:"IBM Plex Serif",Georgia,serif;
+    --ff-b:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --ff-m:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ff-b);
+    line-height:1.62;font-size:16px}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 24px 72px}
+  h1,h2,h3,h4{font-family:var(--ff-d);font-weight:600;line-height:1.24;margin:0}
+  h1{font-size:2.1rem;letter-spacing:-.01em}
+  h2{font-size:1.4rem;margin-top:2.4em;padding-top:.6em;border-top:2px solid var(--line)}
+  h3{font-size:1.1rem;margin-top:1.6em}
+  h4{font-size:1rem;margin-top:1.2em;font-family:var(--ff-b);font-weight:600}
+  p{margin:.7em 0}
+  .eyebrow{font-family:var(--ff-m);font-size:.7rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:.4em}
+  .lede{font-size:1.08rem;color:var(--fg);max-width:64ch}
+  .meta{color:var(--muted);font-size:.86rem;margin-top:.8em}
+  code,.mono{font-family:var(--ff-m);font-variant-numeric:tabular-nums}
+  code{background:var(--line2);padding:.08em .34em;border-radius:3px;font-size:.88em}
+  em{font-family:var(--ff-d);font-style:italic}
+  ul,ol{margin:.6em 0;padding-left:1.4em}
+  li{margin:.3em 0}
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-size:.9rem}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);
+    vertical-align:top}
+  th{font-family:var(--ff-b);font-weight:600;background:var(--panel);
+    border-bottom:2px solid var(--line)}
+  td.mono,th.mono{font-family:var(--ff-m)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:4px;padding:12px 16px;margin:1.2em 0;font-size:.92rem}
+  .note.warn{border-left-color:var(--accent2)}
+  .toc{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    padding:16px 20px;margin:1.8em 0;font-size:.92rem}
+  .toc ol{margin:.3em 0;padding-left:1.3em}
+  .toc a{color:var(--fg);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  .kbd{font-family:var(--ff-m);font-size:.82em;border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:#fff}
+  hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+  footer{margin-top:3em;padding-top:1.2em;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.82rem}
+  @media print{
+    body{font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    h2{break-before:auto;page-break-before:auto}
+    h2,h3,h4{break-after:avoid}
+    table,.note,.toc{break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Hướng dẫn sử dụng</p>
+  <h1>Bảng trực quan hình học mô hình sáu tầng</h1>
+  <p class="lede">Hai bảng điều khiển web tương tác hiển thị một mô hình trạng thái sáu
+    tầng dưới dạng hình học ba chiều. Người dùng điều chỉnh tham số và quan sát trực tiếp
+    ảnh hưởng của chúng lên trạng thái của mô hình và lên các đại lượng chẩn đoán.</p>
+  <p class="meta">Tài liệu kỹ thuật · dùng cho mục đích học thuật · không phải khuyến nghị
+    đầu tư hay dự báo thị trường.</p>
+
+  <div class="toc">
+    <strong>Mục lục</strong>
+    <ol>
+      <li><a href="#tong-quan">Tổng quan</a></li>
+      <li><a href="#yeu-cau">Yêu cầu hệ thống và cách mở</a></li>
+      <li><a href="#khung-nhin">Thao tác chung với khung nhìn 3-D</a></li>
+      <li><a href="#bang-a">Bảng A — Phân rã tiếp tuyến và pháp tuyến</a></li>
+      <li><a href="#bang-b">Bảng B — Đa tạp sáu tấm</a></li>
+      <li><a href="#thuat-ngu">Diễn giải các đại lượng</a></li>
+      <li><a href="#su-co">Khắc phục sự cố</a></li>
+    </ol>
+  </div>
+
+  <h2 id="tong-quan">1. Tổng quan</h2>
+  <p>Ứng dụng gồm <strong>hai trang HTML độc lập</strong>, mỗi trang là một bảng điều khiển
+    tự chứa (không cần máy chủ, không cần cài đặt). Cả hai dựng hình bằng WebGL và chạy toàn
+    bộ phần tính toán ngay trong trình duyệt.</p>
+  <ul>
+    <li><strong>Bảng A</strong> tập trung vào một cơ chế: tác động từ một tầng lên một tầng
+      khác được tách thành hai thành phần — <em>tiếp tuyến</em> (dịch chuyển một điểm trên
+      mặt tầng) và <em>pháp tuyến</em> (dịch chuyển chính mặt tầng). Một tham số duy nhất,
+      <code>τ</code>, điều khiển tỉ lệ giữa hai thành phần đó.</li>
+    <li><strong>Bảng B</strong> hiển thị toàn bộ đa tạp: sáu mặt tầng
+      <code>Σ₀…Σ₅</code> cùng trục pháp tuyến <code>⊥</code>, trạng thái của từng tầng,
+      bảy cạnh ghép liên tầng và mười bảy kênh đóng góp vào đầu ra.</li>
+  </ul>
+  <p>Mô hình giữ nguyên <strong>78 biến</strong> và được sắp xếp theo <em>vai trò hình
+    học</em> của mỗi trọng số. Có bốn vai:</p>
+  <table>
+    <thead><tr><th>Vai</th><th>Ý nghĩa hình học</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Vị trí</strong></td><td>Dịch chuyển chính mặt tầng (thành phần pháp tuyến tác động tới vai này).</td></tr>
+      <tr><td><strong>Tiếp tuyến</strong></td><td>Dịch chuyển một điểm trên mặt tầng, không làm dời mặt.</td></tr>
+      <tr><td><strong>Độ cong</strong></td><td>Mức độ cong của mặt tầng.</td></tr>
+      <tr><td><strong>Biên độ</strong></td><td>Độ lệch tối đa mà mặt tầng có thể đạt tới.</td></tr>
+    </tbody>
+  </table>
+  <p>Ở <code>τ = 0</code>, tác động hoàn toàn nằm trong thành phần tiếp tuyến; mô hình trùng
+    khít với dạng cơ sở và mọi đại lượng chẩn đoán bằng không tới độ chính xác của máy. Khi
+    <code>τ &gt; 0</code>, một phần tác động chuyển sang thành phần pháp tuyến và sinh ra
+    <em>độ dịch thường trực</em> (ký hiệu <code>ξ</code>) — phần dịch chuyển không hoàn
+    nguyên khi tháo bỏ tác động.</p>
+
+  <h2 id="yeu-cau">2. Yêu cầu hệ thống và cách mở</h2>
+  <ul>
+    <li>Trình duyệt hiện đại có hỗ trợ <strong>WebGL</strong>: Chrome, Edge, Firefox hoặc
+      Safari bản gần đây.</li>
+    <li>Không cần kết nối mạng để tính toán; chỉ cần mạng để tải phông chữ và thư viện dựng
+      hình (nếu thiếu mạng, trang vẫn chạy với phông dự phòng).</li>
+    <li><strong>Cách mở:</strong> nhấp đúp vào tệp HTML để mở trong trình duyệt, hoặc đặt tệp
+      lên máy chủ web và truy cập qua đường dẫn tương ứng.</li>
+  </ul>
+  <p>Giao diện tự động chuyển giữa nền sáng và nền tối theo thiết lập của hệ điều hành.</p>
+
+  <h2 id="khung-nhin">3. Thao tác chung với khung nhìn 3-D</h2>
+  <p>Cả hai bảng đều có một khung nhìn ba chiều tương tác:</p>
+  <ul>
+    <li><strong>Kéo chuột</strong> (hoặc kéo bằng ngón tay): xoay cảnh quanh tâm.</li>
+    <li><strong>Lăn chuột</strong> (hoặc chụm/giãn hai ngón): phóng to – thu nhỏ.</li>
+  </ul>
+  <p>Mọi thay đổi ở khối điều khiển được áp dụng tức thì vào khung nhìn và các ô số; không
+    cần nút xác nhận.</p>
+
+  <h2 id="bang-a">4. Bảng A — Phân rã tiếp tuyến và pháp tuyến</h2>
+  <p>Bảng này minh họa một cơ chế trên một cặp tầng: giữ cố định hai sự kiện và trạng thái
+    cuối, chỉ thay đổi tỉ lệ pháp tuyến và thứ tự, rồi đọc ba đại lượng chẩn đoán.</p>
+
+  <h3>4.1. Khối điều khiển</h3>
+  <table>
+    <thead><tr><th>Điều khiển</th><th>Phạm vi</th><th>Chức năng</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Thanh τ₄₅</strong><br><span class="meta">tỉ phần pháp tuyến</span></td>
+        <td class="mono">0 → ~0,262<br>(15 nấc)</td>
+        <td><code>τ = 0</code>: tác động hoàn toàn tiếp tuyến (chỉ đổi hệ số trên mặt tầng).
+          Tăng dần <code>τ</code>: chuyển một phần sang thành phần pháp tuyến (dịch chính mặt
+          tầng). Giá trị hiện tại hiển thị ngay cạnh nhãn. <strong>Vùng khả dụng dừng ở
+          ≈ 0,262</strong>; các nấc vượt trần vẫn kéo được nhưng sẽ bật cảnh báo
+          <em>“ngoài vùng”</em> để cho thấy vì sao không nên vượt.</td>
+      </tr>
+      <tr>
+        <td><strong>Biên độ cú sốc Tầng 4</strong></td>
+        <td class="mono">0,60 → 1,00<br>bước 0,02</td>
+        <td>Đặt cường độ chung cho nhóm biến đầu vào của Tầng 4. Ngưỡng kích hoạt thành phần
+          pháp tuyến là <code>H* = 0,45</code>, tính trên đại lượng tổng hợp của tầng chứ
+          không trực tiếp trên biên độ này.</td>
+      </tr>
+      <tr>
+        <td><strong>Thứ tự hai sự kiện</strong></td>
+        <td>2 nút chọn</td>
+        <td>Chọn trình tự của hai sự kiện (nút <code>meme → cứng</code> hoặc
+          <code>cứng → meme</code>). Hai sự kiện và trạng thái cuối là như nhau ở cả hai lựa
+          chọn; mọi chênh lệch còn lại chỉ có thể đến từ thứ tự.</td>
+      </tr>
+      <tr>
+        <td><strong>Nút khôi phục</strong></td>
+        <td>Bật/tắt</td>
+        <td>Ở mục cuối khối điều khiển. Nhấn để tháo bỏ tác động và đưa trạng thái quan sát
+          trở về trước cú sốc; phần <em>độ dịch thường trực</em> <code>ξ</code> còn lại
+          (nếu có) được giữ nguyên để quan sát.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2. Các nhãn nhanh trên khung nhìn</h3>
+  <p>Góc trên khung nhìn hiển thị bốn nhãn trạng thái tức thời:</p>
+  <ul>
+    <li><strong>Chỉ báo thành phần tiếp tuyến</strong> và <strong>chỉ báo thành phần pháp
+      tuyến</strong> — sáng lên tùy theo <code>τ</code> hiện tại.</li>
+    <li><code>Λ</code> — giá trị hàm logistic tại điểm làm việc hiện tại.</li>
+    <li><code>ξ₅</code> — độ dịch thường trực tích lũy trên tầng <code>Σ₅</code>.</li>
+  </ul>
+
+  <h3>4.3. Ba đại lượng chẩn đoán</h3>
+  <p>Khi <code>τ = 0</code> cả ba đều bằng không — không phải do được hiệu chỉnh về không, mà
+    vì phương trình đầu ra là một hàm của trạng thái và không mang theo lịch sử: hai đường đi
+    tới cùng một trạng thái bắt buộc cho cùng một kết quả.</p>
+  <table>
+    <thead><tr><th>Đại lượng</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">‖[L₄, L₅]‖<br><span class="meta">giao hoán tử</span></td>
+        <td>Đo chênh lệch khi đảo thứ tự hai sự kiện. Bằng không nghĩa là thứ tự không ảnh
+          hưởng đến kết quả.</td></tr>
+      <tr><td class="mono">H(γ)<br><span class="meta">holonomy</span></td>
+        <td>Đi một vòng kín trong không gian tham số rồi trở về điểm xuất phát. Khác không
+          nghĩa là vòng đi để lại một độ dịch thường trực.</td></tr>
+      <tr><td class="mono">dư âm<br><span class="meta">sau khi tháo sốc</span></td>
+        <td>Phần còn lại sau khi tháo bỏ cú sốc. Bằng không nghĩa là tác động hoàn nguyên
+          hoàn toàn.</td></tr>
+      <tr><td class="mono">θ₀<br><span class="meta">ngưỡng sau cùng</span></td>
+        <td>Vị trí sau cùng của mặt tầng <code>Σ₅</code>. Cố định khi <code>τ = 0</code>;
+          khi <code>τ &gt; 0</code> nó có thể dịch đi.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4. Mục phân mảnh đầu vào</h3>
+  <p>Phần dưới bảng minh họa một biến đầu vào của Tầng 2 theo công thức
+    <code>T_frag(t) = T_frag⁰ + ρ · ξ₂(t)</code>. Hai chế độ được so sánh:</p>
+  <ul>
+    <li><strong>Không phản hồi</strong> — biến giữ đúng giá trị đã điền; mô hình không tự
+      sinh ra nó.</li>
+    <li><strong>Có phản hồi</strong> — biến được sinh thêm từ độ dịch thường trực
+      <code>ξ₂</code> ở <code>τ</code> hiện tại.</li>
+  </ul>
+  <p>Các mục còn lại liệt kê năm hằng số điều chỉnh (nền, vùng khả dụng, xuất xứ, mức độ bằng
+    chứng) và ghi chú về những ô số mà người dùng phải tự điền. Đây là phần tham khảo, chỉ
+    đọc.</p>
+
+  <h2 id="bang-b">5. Bảng B — Đa tạp sáu tấm</h2>
+  <p>Bảng này cho cái nhìn đầy đủ: toàn bộ sáu mặt tầng, trạng thái từng tầng, các cạnh ghép
+    và các kênh đóng góp vào đầu ra. Bố cục gồm cột khung nhìn 3-D bên trái và cột nhập liệu
+    bên phải.</p>
+
+  <h3>5.1. Các số đọc ở đầu bảng</h3>
+  <table>
+    <thead><tr><th>Ký hiệu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ln DXY</td><td>Đại lượng đầu ra vô hướng của mô hình (dạng
+        lô-ga-rit của chỉ số).</td></tr>
+      <tr><td class="mono">Ψ_str, κ_sys, Λ(σ)</td><td>Các đại lượng trung gian của mô hình
+        tại trạng thái hiện tại.</td></tr>
+      <tr><td class="mono">Σ a∥ · Σ a⊥ · Σ ξ</td><td>Tổng thành phần tiếp tuyến, tổng thành
+        phần pháp tuyến và tổng độ dịch thường trực trên toàn đa tạp (cũng hiển thị dạng
+        nhãn trên khung nhìn).</td></tr>
+      <tr><td class="mono">‖[L_a, L_b]‖ · H(γ) · dư âm</td><td>Ba đại lượng chẩn đoán, cùng
+        định nghĩa như ở Bảng A nhưng tính trên cặp tầng đang xét.</td></tr>
+      <tr><td class="mono">‖C‖∞ &lt; 4 · η·κ_A·g₁ &lt; 4</td><td>Hai biên kiểm tra tính co
+        của mô hình; giá trị phải nằm dưới ngưỡng 4.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2. Cột nhập liệu (bên phải)</h3>
+  <p>Mỗi biến có một ô nhập số và một thanh trượt đi kèm, giới hạn trong vùng
+    <code>[lo, hi]</code> của biến đó. Các nút ở đầu cột đặt nhanh toàn bộ bộ số:</p>
+  <table>
+    <thead><tr><th>Nút</th><th>Tác dụng</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Table 10.3</td><td>Nạp bộ giá trị cơ sở (mặc định).</td></tr>
+      <tr><td class="mono">ngẫu nhiên</td><td>Sinh một bộ giá trị ngẫu nhiên trong vùng khả
+        dụng.</td></tr>
+      <tr><td class="mono">mở</td><td>Đặt các biến về cấu hình “mở”.</td></tr>
+      <tr><td class="mono">đóng</td><td>Đặt các biến về cấu hình “đóng”.</td></tr>
+    </tbody>
+  </table>
+  <p>Một cặp nút chọn <strong>dạng trí nhớ</strong> quyết định cách tích lũy độ dịch thường
+    trực:</p>
+  <ul>
+    <li><code>trễ · cực đại</code> — độ dịch bằng <strong>cực đại theo lịch sử</strong>; chỉ
+      giá trị đỉnh của đường đi được tính, thời lượng không vào công thức (mặc định).</li>
+    <li><code>mỏi · tích phân</code> — độ dịch là <strong>tích phân theo thời gian</strong>;
+      thời lượng thay thế được cho biên độ.</li>
+  </ul>
+  <p>Ô được đánh dấu màu riêng biểu thị biến <em>chưa có chuỗi quan sát</em> (người dùng tự
+    điền).</p>
+
+  <h3>5.3. Ba bảng tham chiếu</h3>
+  <h4>Bảng “Sáu tấm” (Σ₀…Σ₅ · ⊥)</h4>
+  <p>Mỗi hàng là một tầng, với các cột: trọng số vai vị trí, vùng <code>[lo, hi]</code>, giá
+    trị hiện tại, độ dịch thô, độ dịch sau khi kẹp vào vùng hợp lệ, cường độ, và độ cong
+    <code>II = 4Λ′</code>.</p>
+  <h4>Bảng “Bảy cạnh liên tấm”</h4>
+  <p>Mỗi hàng là một cạnh ghép giữa hai tầng, với: tầng nguồn, tầng đích và trọng số đích,
+    vai của trọng số đích, tải, <code>τ</code>, thành phần tiếp tuyến
+    <code>a∥ = (1−τ)·tải</code>, thành phần pháp tuyến <code>a⊥ = τ·tải</code>, phần vượt
+    ngưỡng <code>(cđ − H*)₊</code>, và độ sâu dịch
+    <code>τ·p·vượt·(1+q·II)</code>.</p>
+  <h4>Bảng “Mười bảy kênh”</h4>
+  <p>Liệt kê các kênh đóng góp vào đầu ra theo công thức
+    <code>α(σ) = α_tĩnh + (α_căng − α_tĩnh)·Λ(σ)</code>, kèm bên, mức, số mũ, số hạng
+    lô-ga-rit và mức độ bằng chứng của từng kênh.</p>
+
+  <h2 id="thuat-ngu">6. Diễn giải các đại lượng</h2>
+  <table>
+    <thead><tr><th>Ký hiệu</th><th>Tên</th><th>Diễn giải</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">τ</td><td>Tỉ phần pháp tuyến</td><td>Phần của tác động liên tầng
+        nằm theo phương pháp tuyến. <code>τ = 0</code>: hoàn toàn tiếp tuyến.</td></tr>
+      <tr><td class="mono">a∥</td><td>Thành phần tiếp tuyến</td><td><code>(1−τ)·tải</code> —
+        dịch một điểm trên mặt tầng; hoàn nguyên được.</td></tr>
+      <tr><td class="mono">a⊥</td><td>Thành phần pháp tuyến</td><td><code>τ·tải</code> — dịch
+        chính mặt tầng.</td></tr>
+      <tr><td class="mono">ξ</td><td>Độ dịch thường trực</td><td>Phần dịch chuyển không hoàn
+        nguyên; đơn điệu không giảm theo thời gian.</td></tr>
+      <tr><td class="mono">II</td><td>Độ cong</td><td><code>4Λ′</code> — độ cong của mặt
+        tầng tại điểm làm việc; đạt tối đa ở điểm uốn.</td></tr>
+      <tr><td class="mono">Λ</td><td>Hàm logistic</td><td>Hàm bão hòa dùng ở nhiều kênh.</td></tr>
+      <tr><td class="mono">H*</td><td>Ngưỡng</td><td>Mức tối thiểu để thành phần pháp tuyến
+        bắt đầu sinh độ dịch (nền 0,45).</td></tr>
+      <tr><td class="mono">‖[L_a,L_b]‖</td><td>Giao hoán tử</td><td>Mức phụ thuộc vào thứ tự
+        của hai tác động.</td></tr>
+      <tr><td class="mono">H(γ)</td><td>Holonomy</td><td>Độ dịch còn lại sau một vòng kín
+        trong không gian tham số.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="su-co">7. Khắc phục sự cố</h2>
+  <table>
+    <thead><tr><th>Hiện tượng</th><th>Cách xử lý</th></tr></thead>
+    <tbody>
+      <tr><td>Khung nhìn 3-D trống hoặc đen</td><td>Trình duyệt chưa bật WebGL hoặc tăng tốc
+        phần cứng. Bật tăng tốc phần cứng trong thiết lập trình duyệt rồi tải lại trang.</td></tr>
+      <tr><td>Xuất hiện cảnh báo <em>“ngoài vùng”</em></td><td>Giá trị <code>τ</code> (hoặc
+        một biến) đã vượt vùng khả dụng. Đây là thông báo có chủ đích, không phải lỗi; giảm
+        giá trị về trong vùng để kết quả có hiệu lực.</td></tr>
+      <tr><td>Phông chữ hiển thị khác thường</td><td>Mạng chưa tải được phông từ máy chủ
+        phông; trang tự chuyển sang phông hệ thống, nội dung không đổi.</td></tr>
+      <tr><td>Thao tác chậm, giật</td><td>Thu nhỏ cửa sổ trình duyệt hoặc đóng bớt tab khác;
+        dựng hình 3-D phụ thuộc vào năng lực đồ họa của máy.</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    Tài liệu hướng dẫn sử dụng · Vi Nhật Sơn · chỉ dành cho mục đích học thuật.
+    Không nội dung nào ở đây là khuyến nghị đầu tư hay dự báo thị trường.
+  </footer>
+
+</div>
+</body>
+</html>

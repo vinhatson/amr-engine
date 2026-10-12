@@ -1,0 +1,112 @@
+
+<div class="mast">
+  <div class="in">
+    <h1>Đa tạp sáu tấm</h1>
+    <div class="rd">
+      <div><k>ln DXY</k><b id="hLn">—</b></div>
+      <div><k>Ψ_str</k><b id="hPsi">—</b></div>
+      <div><k>κ_sys</k><b id="hKap">—</b></div>
+      <div><k>Λ(σ)</k><b id="hLam">—</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="main">
+    <div class="col">
+      <div class="view">
+        <canvas id="gl"></canvas>
+        <div class="hud">
+          <span class="pill t">Σ a∥<b id="hTang">—</b></span>
+          <span class="pill n">Σ a⊥<b id="hNorm">—</b></span>
+          <span class="pill s">Σ ξ<b id="hScar">—</b></span>
+        </div>
+        <p class="vh">kéo · lăn</p>
+      </div>
+
+      <div class="key">
+        <span><i class="sw" style="background:var(--tang)"></i>a∥ = (1−τ)·tải</span>
+        <span><i class="sw" style="background:var(--norm)"></i>a⊥ = τ·tải</span>
+        <span><i class="sw" style="background:var(--scar)"></i>ξ</span>
+        <span style="color:var(--line)"><i class="sw dash"></i><em
+          style="font-style:normal;color:var(--muted)">biên [lo, hi]</em></span>
+        <span style="color:var(--scar)"><i class="sw dash"></i><em
+          style="font-style:normal;color:var(--muted)">vị trí trước khi dịch</em></span>
+        <span><i class="sw" style="background:var(--sheet);opacity:.45"></i>mặt tấm</span>
+      </div>
+
+      <div class="gauges">
+        <div class="g" id="gC"><k>‖[L_a, L_b]‖</k><b id="vC">—</b></div>
+        <div class="g" id="gH"><k>H(γ)</k><b id="vH">—</b></div>
+        <div class="g" id="gR"><k>dư âm</k><b id="vR">—</b></div>
+        <div class="g" data-z="x"><k>‖C‖∞ &lt; 4 · E19</k><b id="vCn">—</b></div>
+        <div class="g" data-z="x"><k>η·κ_A·g₁ &lt; 4 · Prop 8.2</k><b id="vCt">—</b></div>
+      </div>
+
+      <div id="warns"></div>
+
+      <div class="grid2">
+        <section class="card">
+          <h2>Sáu tấm<em>Σ₀ … Σ₅ · ⊥</em></h2>
+          <div class="scroll"><table class="t">
+            <thead><tr>
+              <th>tấm</th><th>vị trí<u>trọng số</u></th><th>vùng<u>[lo, hi]</u></th>
+              <th>giá trị</th><th>ξ thô</th><th>đã dịch<u>sau khi kẹp</u></th>
+              <th>cường độ</th><th>độ cong<u>II = 4Λ′</u></th><th>biến</th>
+            </tr></thead>
+            <tbody id="tSheets"></tbody>
+          </table></div>
+        </section>
+
+        <section class="card">
+          <h2>Bảy cạnh liên tấm<em>từ gamma của registry</em></h2>
+          <div class="scroll"><table class="t">
+            <thead><tr>
+              <th>cạnh</th><th>nguồn</th><th>đích<u>trọng số</u></th><th>vai</th>
+              <th>tải</th><th>τ</th><th>a∥<u>(1−τ)·tải</u></th>
+              <th>a⊥<u>τ·tải</u></th><th>vượt<u>(cđ − H*)₊</u></th>
+              <th>độ sâu<u>τ·p·vượt·(1+q·II)</u></th>
+            </tr></thead>
+            <tbody id="tEdges"></tbody>
+          </table></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Mười bảy kênh E9<em>α(σ) = α_tĩnh + (α_căng − α_tĩnh)·Λ(σ)</em></h2>
+        <div class="scroll"><table class="t">
+          <thead><tr>
+            <th>kênh</th><th>bên</th><th>mức</th><th>số mũ<u>α(σ)</u></th>
+            <th>số hạng log</th><th></th><th>bằng chứng</th>
+          </tr></thead>
+          <tbody id="tTerms"></tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="pad">
+        <header>
+          <h2>Điền số</h2>
+          <div class="tools">
+            <button class="pri" id="bBase">Table 10.3</button>
+            <button id="bRand">ngẫu nhiên</button>
+            <button id="bOpen">mở</button>
+            <button id="bShut">đóng</button>
+          </div>
+          <div class="seg" role="group" aria-label="dạng trí nhớ">
+            <button id="mHy" aria-pressed="true">trễ · cực đại</button>
+            <button id="mFa" aria-pressed="false">mỏi · tích phân</button>
+          </div>
+          <p class="key" style="padding:0"><span style="color:var(--scar)">▪<em
+            style="font-style:normal;color:var(--muted)">không có chuỗi quan sát</em></span></p>
+        </header>
+        <div id="secs"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Vi Nhật Sơn</footer>
+
+</div>

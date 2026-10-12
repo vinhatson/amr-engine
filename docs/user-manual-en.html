@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Manual — Six-Layer Model Geometry Visualizer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#ffffff; --fg:#182230; --muted:#5c6878; --line:#d7dee7; --line2:#eef2f6;
+    --panel:#f7f9fb; --accent:#157f8e; --accent2:#b4631c; --code:#0f151c;
+    --ff-d:"IBM Plex Serif",Georgia,serif;
+    --ff-b:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --ff-m:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ff-b);
+    line-height:1.62;font-size:16px}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 24px 72px}
+  h1,h2,h3,h4{font-family:var(--ff-d);font-weight:600;line-height:1.24;margin:0}
+  h1{font-size:2.1rem;letter-spacing:-.01em}
+  h2{font-size:1.4rem;margin-top:2.4em;padding-top:.6em;border-top:2px solid var(--line)}
+  h3{font-size:1.1rem;margin-top:1.6em}
+  h4{font-size:1rem;margin-top:1.2em;font-family:var(--ff-b);font-weight:600}
+  p{margin:.7em 0}
+  .eyebrow{font-family:var(--ff-m);font-size:.7rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:.4em}
+  .lede{font-size:1.08rem;color:var(--fg);max-width:66ch}
+  .meta{color:var(--muted);font-size:.86rem;margin-top:.8em}
+  code,.mono{font-family:var(--ff-m);font-variant-numeric:tabular-nums}
+  code{background:var(--line2);padding:.08em .34em;border-radius:3px;font-size:.88em}
+  em{font-family:var(--ff-d);font-style:italic}
+  ul,ol{margin:.6em 0;padding-left:1.4em}
+  li{margin:.3em 0}
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-size:.9rem}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);
+    vertical-align:top}
+  th{font-family:var(--ff-b);font-weight:600;background:var(--panel);
+    border-bottom:2px solid var(--line)}
+  td.mono,th.mono{font-family:var(--ff-m)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:4px;padding:12px 16px;margin:1.2em 0;font-size:.92rem}
+  .note.warn{border-left-color:var(--accent2)}
+  .toc{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    padding:16px 20px;margin:1.8em 0;font-size:.92rem}
+  .toc ol{margin:.3em 0;padding-left:1.3em}
+  .toc a{color:var(--fg);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  .kbd{font-family:var(--ff-m);font-size:.82em;border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:#fff}
+  hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+  footer{margin-top:3em;padding-top:1.2em;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.82rem}
+  @media print{
+    body{font-size:11.5pt}
+    .wrap{max-width:none;padding:0}
+    h2{break-before:auto;page-break-before:auto}
+    h2,h3,h4{break-after:avoid}
+    table,.note,.toc{break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">User Manual</p>
+  <h1>Six-Layer Model Geometry Visualizer</h1>
+  <p class="lede">Two interactive web panels that render a six-layer state-space model as
+    three-dimensional geometry. You adjust the parameters and observe, in real time, how they
+    affect the model's state and its diagnostic quantities.</p>
+  <p class="meta">Technical documentation · for academic use · not investment advice and not a
+    market forecast.</p>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#requirements">System requirements and launching</a></li>
+      <li><a href="#viewport">Common 3-D viewport controls</a></li>
+      <li><a href="#panel-a">Panel A — Tangential and normal decomposition</a></li>
+      <li><a href="#panel-b">Panel B — Six-sheet manifold</a></li>
+      <li><a href="#glossary">Glossary of quantities</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ol>
+  </div>
+
+  <h2 id="overview">1. Overview</h2>
+  <p>The application consists of <strong>two independent HTML pages</strong>, each a
+    self-contained control panel (no server, no installation required). Both render with WebGL
+    and run all computation directly in the browser.</p>
+  <ul>
+    <li><strong>Panel A</strong> focuses on a single mechanism: the influence of one layer on
+      another is split into two components — a <em>tangential</em> one (which displaces a point
+      on a layer surface) and a <em>normal</em> one (which displaces the layer surface itself).
+      A single parameter, <code>τ</code>, controls the ratio between them.</li>
+    <li><strong>Panel B</strong> shows the full manifold: all six layer surfaces
+      <code>Σ₀…Σ₅</code> together with the normal axis <code>⊥</code>, the state of each layer,
+      the seven inter-layer coupling edges, and the seventeen channels that contribute to the
+      output.</li>
+  </ul>
+  <p>The model keeps all <strong>78 variables</strong> intact, organized by the
+    <em>geometric role</em> of each weight. There are four roles:</p>
+  <table>
+    <thead><tr><th>Role</th><th>Geometric meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Position</strong></td><td>Displaces the layer surface itself (the normal component acts on this role).</td></tr>
+      <tr><td><strong>Tangential</strong></td><td>Displaces a point on the layer surface without moving the surface.</td></tr>
+      <tr><td><strong>Curvature</strong></td><td>How much the layer surface bends.</td></tr>
+      <tr><td><strong>Amplitude</strong></td><td>The maximum offset the layer surface can reach.</td></tr>
+    </tbody>
+  </table>
+  <p>At <code>τ = 0</code> the influence lies entirely in the tangential component; the model
+    coincides with its baseline form and every diagnostic quantity is zero to machine precision.
+    When <code>τ &gt; 0</code>, part of the influence moves into the normal component and produces
+    a <em>persistent displacement</em> (denoted <code>ξ</code>) — the part of the motion that
+    does not reverse when the influence is removed.</p>
+
+  <h2 id="requirements">2. System requirements and launching</h2>
+  <ul>
+    <li>A modern browser with <strong>WebGL</strong> support: a recent Chrome, Edge, Firefox or
+      Safari.</li>
+    <li>No network connection is needed for computation; a connection is used only to load the
+      fonts and the rendering library (if offline, the page still runs with fallback fonts).</li>
+    <li><strong>To launch:</strong> double-click the HTML file to open it in a browser, or place
+      the file on a web server and visit the corresponding URL.</li>
+  </ul>
+  <p>The interface switches automatically between light and dark appearance according to the
+    operating-system setting.</p>
+
+  <h2 id="viewport">3. Common 3-D viewport controls</h2>
+  <p>Both panels contain an interactive three-dimensional viewport:</p>
+  <ul>
+    <li><strong>Drag</strong> (mouse or finger): rotate the scene around its center.</li>
+    <li><strong>Scroll</strong> (or pinch): zoom in and out.</li>
+  </ul>
+  <p>Every change in the control block is applied to the viewport and the numeric readouts
+    immediately; there is no confirm button.</p>
+
+  <h2 id="panel-a">4. Panel A — Tangential and normal decomposition</h2>
+  <p>This panel illustrates one mechanism on a pair of layers: it holds the two events and the
+    final state fixed, varies only the normal fraction and the order, and reads back three
+    diagnostic quantities.</p>
+
+  <h3>4.1. Control block</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Range</th><th>Function</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>τ₄₅ slider</strong><br><span class="meta">normal fraction</span></td>
+        <td class="mono">0 → ~0.262<br>(15 steps)</td>
+        <td><code>τ = 0</code>: fully tangential influence (changes coefficients on the surface
+          only). Increasing <code>τ</code>: moves part of it into the normal component (displaces
+          the surface itself). The current value is shown next to the label. <strong>The usable
+          region ends at ≈ 0.262</strong>; steps beyond the cap can still be dragged but raise an
+          <em>“out of range”</em> warning to show why one should not exceed it.</td>
+      </tr>
+      <tr>
+        <td><strong>Layer-4 shock amplitude</strong></td>
+        <td class="mono">0.60 → 1.00<br>step 0.02</td>
+        <td>Sets a common intensity for the Layer-4 input group. The threshold that activates the
+          normal component is <code>H* = 0.45</code>, evaluated on the layer's aggregate
+          quantity rather than directly on this amplitude.</td>
+      </tr>
+      <tr>
+        <td><strong>Order of the two events</strong></td>
+        <td>2 toggle buttons</td>
+        <td>Selects the sequence of the two events (button <code>meme → cứng</code> or
+          <code>cứng → meme</code>). The two events and the final state are identical in both
+          choices; any remaining difference can only come from the order.</td>
+      </tr>
+      <tr>
+        <td><strong>Restore button</strong></td>
+        <td>Toggle</td>
+        <td>At the bottom of the control block. Press it to remove the influence and return the
+          observed state to its pre-shock value; any remaining <em>persistent displacement</em>
+          <code>ξ</code> is kept visible.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2. Quick labels on the viewport</h3>
+  <p>The corner of the viewport shows four instantaneous status labels:</p>
+  <ul>
+    <li>A <strong>tangential-component indicator</strong> and a <strong>normal-component
+      indicator</strong> — lit according to the current <code>τ</code>.</li>
+    <li><code>Λ</code> — the logistic value at the current operating point.</li>
+    <li><code>ξ₅</code> — the persistent displacement accumulated on layer <code>Σ₅</code>.</li>
+  </ul>
+
+  <h3>4.3. The three diagnostic quantities</h3>
+  <p>At <code>τ = 0</code> all three are zero — not because they were calibrated to zero, but
+    because the output equation is a function of state and carries no history: two paths to the
+    same state necessarily give the same result.</p>
+  <table>
+    <thead><tr><th>Quantity</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">‖[L₄, L₅]‖<br><span class="meta">commutator</span></td>
+        <td>Measures the difference when the order of the two events is reversed. Zero means the
+          order does not affect the result.</td></tr>
+      <tr><td class="mono">H(γ)<br><span class="meta">holonomy</span></td>
+        <td>Traverses a closed loop in parameter space and returns to the starting point.
+          Non-zero means the loop leaves behind a persistent displacement.</td></tr>
+      <tr><td class="mono">residual<br><span class="meta">after unwinding</span></td>
+        <td>What remains after the shock is removed. Zero means the influence is fully
+          reversible.</td></tr>
+      <tr><td class="mono">θ₀<br><span class="meta">final threshold</span></td>
+        <td>The final position of layer <code>Σ₅</code>. Fixed at <code>τ = 0</code>; it may
+          shift once <code>τ &gt; 0</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4. Fragmentation-input section</h3>
+  <p>The lower part of the panel illustrates a Layer-2 input variable under the rule
+    <code>T_frag(t) = T_frag⁰ + ρ · ξ₂(t)</code>. Two modes are compared:</p>
+  <ul>
+    <li><strong>No feedback</strong> — the variable keeps the value entered; the model cannot
+      generate it on its own.</li>
+    <li><strong>With feedback</strong> — the variable gains an additional contribution from the
+      persistent displacement <code>ξ₂</code> at the current <code>τ</code>.</li>
+  </ul>
+  <p>The remaining sections list the five tuning constants (baseline, usable region, provenance,
+    evidence level) and a note on the cells the user must fill in manually. These are
+    reference-only, read-only sections.</p>
+
+  <h2 id="panel-b">5. Panel B — Six-sheet manifold</h2>
+  <p>This panel gives the full picture: all six layer surfaces, the state of each layer, the
+    coupling edges, and the channels that contribute to the output. The layout has a 3-D viewport
+    column on the left and an input column on the right.</p>
+
+  <h3>5.1. Readouts at the top</h3>
+  <table>
+    <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ln DXY</td><td>The model's scalar output quantity (a log of the
+        index).</td></tr>
+      <tr><td class="mono">Ψ_str, κ_sys, Λ(σ)</td><td>Intermediate model quantities at the
+        current state.</td></tr>
+      <tr><td class="mono">Σ a∥ · Σ a⊥ · Σ ξ</td><td>Total tangential component, total normal
+        component, and total persistent displacement across the manifold (also shown as labels
+        on the viewport).</td></tr>
+      <tr><td class="mono">‖[L_a, L_b]‖ · H(γ) · residual</td><td>The three diagnostic
+        quantities, defined as in Panel A but computed on the layer pair under consideration.</td></tr>
+      <tr><td class="mono">‖C‖∞ &lt; 4 · η·κ_A·g₁ &lt; 4</td><td>Two bounds that check the
+        model's contraction property; the values must stay below the threshold of 4.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2. Input column (right side)</h3>
+  <p>Each variable has a numeric field and an accompanying slider, bounded to that variable's
+    <code>[lo, hi]</code> region. The buttons at the top of the column set the entire number set
+    at once:</p>
+  <table>
+    <thead><tr><th>Button</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Table 10.3</td><td>Loads the baseline value set (default).</td></tr>
+      <tr><td class="mono">ngẫu nhiên</td><td>Generates a random value set within the usable
+        region.</td></tr>
+      <tr><td class="mono">mở</td><td>Sets the variables to the “open” configuration.</td></tr>
+      <tr><td class="mono">đóng</td><td>Sets the variables to the “closed” configuration.</td></tr>
+    </tbody>
+  </table>
+  <p>A pair of toggle buttons for the <strong>memory mode</strong> determines how persistent
+    displacement accumulates:</p>
+  <ul>
+    <li><code>trễ · cực đại</code> (hysteresis · maximum) — the displacement equals the
+      <strong>historical maximum</strong>; only the peak value of the path counts, duration does
+      not enter the formula (default).</li>
+    <li><code>mỏi · tích phân</code> (fatigue · integral) — the displacement is the
+      <strong>time integral</strong>; duration can substitute for amplitude.</li>
+  </ul>
+  <p>A cell marked with a distinct color denotes a variable that has <em>no observed series</em>
+    (filled in by the user).</p>
+
+  <h3>5.3. The three reference tables</h3>
+  <h4>“Six sheets” table (Σ₀…Σ₅ · ⊥)</h4>
+  <p>Each row is a layer, with columns for: the position-role weight, the <code>[lo, hi]</code>
+    region, the current value, the raw displacement, the displacement after clamping to the valid
+    region, the intensity, and the curvature <code>II = 4Λ′</code>.</p>
+  <h4>“Seven inter-layer edges” table</h4>
+  <p>Each row is a coupling edge between two layers, with: source layer, destination layer and
+    its weight, the role of the destination weight, the load, <code>τ</code>, the tangential
+    component <code>a∥ = (1−τ)·load</code>, the normal component <code>a⊥ = τ·load</code>, the
+    threshold excess <code>(src − H*)₊</code>, and the displacement depth
+    <code>τ·p·excess·(1+q·II)</code>.</p>
+  <h4>“Seventeen channels” table</h4>
+  <p>Lists the channels contributing to the output under the rule
+    <code>α(σ) = α_static + (α_taut − α_static)·Λ(σ)</code>, with each channel's side, level,
+    exponent, log term and evidence level.</p>
+
+  <h2 id="glossary">6. Glossary of quantities</h2>
+  <table>
+    <thead><tr><th>Symbol</th><th>Name</th><th>Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">τ</td><td>Normal fraction</td><td>The fraction of the inter-layer
+        influence that lies along the normal direction. <code>τ = 0</code>: fully tangential.</td></tr>
+      <tr><td class="mono">a∥</td><td>Tangential component</td><td><code>(1−τ)·load</code> —
+        displaces a point on the surface; reversible.</td></tr>
+      <tr><td class="mono">a⊥</td><td>Normal component</td><td><code>τ·load</code> — displaces
+        the surface itself.</td></tr>
+      <tr><td class="mono">ξ</td><td>Persistent displacement</td><td>The non-reversing part of
+        the motion; monotonically non-decreasing over time.</td></tr>
+      <tr><td class="mono">II</td><td>Curvature</td><td><code>4Λ′</code> — the curvature of the
+        surface at the operating point; maximal at the inflection point.</td></tr>
+      <tr><td class="mono">Λ</td><td>Logistic function</td><td>The saturating function used in
+        many channels.</td></tr>
+      <tr><td class="mono">H*</td><td>Threshold</td><td>The minimum level for the normal
+        component to begin producing displacement (baseline 0.45).</td></tr>
+      <tr><td class="mono">‖[L_a,L_b]‖</td><td>Commutator</td><td>The degree of order-dependence
+        of two influences.</td></tr>
+      <tr><td class="mono">H(γ)</td><td>Holonomy</td><td>The displacement remaining after a
+        closed loop in parameter space.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="troubleshooting">7. Troubleshooting</h2>
+  <table>
+    <thead><tr><th>Symptom</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td>The 3-D viewport is blank or black</td><td>The browser does not have WebGL or
+        hardware acceleration enabled. Enable hardware acceleration in the browser settings and
+        reload the page.</td></tr>
+      <tr><td>An <em>“out of range”</em> warning appears</td><td>The <code>τ</code> value (or a
+        variable) has exceeded the usable region. This is an intentional notice, not an error;
+        lower the value back into the region for the result to be valid.</td></tr>
+      <tr><td>Fonts look unusual</td><td>The network could not load fonts from the font server;
+        the page falls back to system fonts, and the content is unchanged.</td></tr>
+      <tr><td>Interaction is slow or stutters</td><td>Shrink the browser window or close other
+        tabs; 3-D rendering depends on the machine's graphics capability.</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    User manual · Vi Nhật Sơn · for academic use only.
+    Nothing herein is investment advice or a market forecast.
+  </footer>
+
+</div>
+</body>
+</html>

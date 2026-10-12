@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tấm giấy và con dao</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Bàn quang học: sân khấu 3-D chiếm trên, dàn đo đọc số ở dưới, dải chế độ khép lại. */
+:root{
+  --bg:#0B1015; --panel:#131A22; --panel2:#0F151C; --fg:#E6EBF1; --muted:#8A97A8;
+  --line:#242F3C; --line2:#1A232E;
+  --slide:#48B9C9;        /* tiếp tuyến — trượt song song */
+  --pierce:#E88B3C;       /* pháp tuyến — đâm xuyên */
+  --scar:#CC4C62;         /* cái lỗ còn lại */
+  --paper:#C9D2DE;        /* tờ giấy */
+  --on-accent:#0B1015;
+  color-scheme:dark;
+  --ff-d:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --ff-b:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ff-m:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#F2F4F7; --panel:#FFFFFF; --panel2:#E9EDF2; --fg:#182230; --muted:#5C6878;
+  --line:#CBD4DF; --line2:#DDE4EC;
+  --slide:#157F8E; --pierce:#B4631C; --scar:#A8303F; --paper:#44586E;
+  --on-accent:#FFFFFF; color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#F2F4F7; --panel:#FFFFFF; --panel2:#E9EDF2; --fg:#182230; --muted:#5C6878;
+  --line:#CBD4DF; --line2:#DDE4EC;
+  --slide:#157F8E; --pierce:#B4631C; --scar:#A8303F; --paper:#44586E;
+  --on-accent:#FFFFFF; color-scheme:light;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ff-b);line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 48px;
+  display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--ff-d);font-weight:600;text-wrap:balance;margin:0;line-height:1.22}
+h1{font-size:clamp(1.85rem,5vw,2.9rem);letter-spacing:-.012em}
+h2{font-size:clamp(1.12rem,2.6vw,1.4rem)}
+h3{font-size:.98rem}
+p{margin:0}
+.eyebrow{font-family:var(--ff-m);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted)}
+.lede{font-size:clamp(.98rem,2.1vw,1.1rem);max-width:64ch;color:var(--fg)}
+.sub{color:var(--muted);font-size:.9rem;max-width:68ch}
+.mono{font-family:var(--ff-m);font-variant-numeric:tabular-nums}
+em{font-family:var(--ff-d);font-style:italic}
+
+/* ── sân khấu ──────────────────────────────────────────────────────────── */
+.stage{position:relative;border:1px solid var(--line);border-radius:3px;overflow:hidden;
+  background:var(--panel2);min-width:0}
+#gl{display:block;width:100%;height:clamp(340px,52vh,560px);touch-action:none;cursor:grab}
+#gl.drag{cursor:grabbing}
+.chips{position:absolute;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:6px;
+  max-width:calc(100% - 24px);pointer-events:none}
+.chip{font-family:var(--ff-m);font-size:.68rem;letter-spacing:.06em;padding:3px 8px;
+  border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 86%,transparent);
+  border-radius:2px;color:var(--muted);text-transform:uppercase}
+.chip.on{color:var(--on-accent);border-color:transparent}
+.chip.slide.on{background:var(--slide)} .chip.pierce.on{background:var(--pierce)}
+.hint{position:absolute;bottom:10px;right:12px;font-family:var(--ff-m);font-size:.64rem;
+  color:var(--muted);pointer-events:none;letter-spacing:.04em}
+
+/* ── bảng điều khiển ───────────────────────────────────────────────────── */
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:18px 26px;
+  border:1px solid var(--line);border-left:2px solid var(--pierce);
+  background:var(--panel);padding:18px 20px;border-radius:3px}
+.fld{display:flex;flex-direction:column;gap:7px;min-width:0}
+.fld>label{font-family:var(--ff-m);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+.fld>label b{font-weight:500;color:var(--fg);font-size:.82rem;letter-spacing:0}
+input[type=range]{width:100%;accent-color:var(--pierce);margin:0;height:20px}
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg button{flex:1;min-width:0;font-family:var(--ff-m);font-size:.72rem;padding:8px 6px;
+  background:transparent;color:var(--muted);border:0;cursor:pointer;letter-spacing:.03em;
+  border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--pierce);color:var(--on-accent)}
+.btn{font-family:var(--ff-m);font-size:.74rem;letter-spacing:.05em;padding:9px 14px;
+  background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:2px;
+  cursor:pointer;text-align:left}
+.btn:hover{border-color:var(--pierce);color:var(--pierce)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--pierce);
+  outline-offset:2px}
+
+/* ── dàn đo ────────────────────────────────────────────────────────────── */
+.instr{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.gauge{background:var(--panel);padding:16px 18px;display:flex;flex-direction:column;gap:5px;
+  min-width:0}
+.gauge .k{font-family:var(--ff-m);font-size:.68rem;letter-spacing:.09em;color:var(--muted);
+  text-transform:uppercase}
+.gauge .v{font-family:var(--ff-m);font-size:clamp(1.3rem,3.4vw,1.72rem);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1;word-break:break-all}
+.gauge .n{font-size:.78rem;color:var(--muted);line-height:1.45}
+.gauge[data-live=zero] .v{color:var(--slide)}
+.gauge[data-live=live] .v{color:var(--pierce)}
+
+/* ── dải ───────────────────────────────────────────────────────────────── */
+.bandwrap{border:1px solid var(--line);background:var(--panel);border-radius:3px;
+  padding:18px 20px 12px;display:flex;flex-direction:column;gap:12px;min-width:0}
+#band{display:block;width:100%;height:230px}
+
+/* ── bản đồ ────────────────────────────────────────────────────────────── */
+.atlas{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.sh{background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:9px;
+  min-width:0}
+.sh header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.sh .nm{font-family:var(--ff-d);font-size:.98rem;font-weight:600}
+.sh .ct{font-family:var(--ff-m);font-size:.72rem;color:var(--muted)}
+.roles{display:flex;flex-direction:column;gap:6px}
+.role{display:flex;gap:9px;font-size:.78rem;min-width:0}
+.role .rl{font-family:var(--ff-m);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);flex:0 0 72px;padding-top:3px}
+.role .rv{font-family:var(--ff-m);font-size:.72rem;color:var(--fg);min-width:0;
+  word-break:break-word;line-height:1.55}
+.role.pos .rv{color:var(--pierce)}
+
+/* ── cạnh ──────────────────────────────────────────────────────────────── */
+.edges{width:100%;border-collapse:collapse;font-family:var(--ff-m);font-size:.78rem}
+.edges th{text-align:left;font-weight:500;font-size:.66rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding:7px 12px 7px 0;
+  border-bottom:1px solid var(--line)}
+.edges td{padding:8px 12px 8px 0;border-bottom:1px solid var(--line2);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.edges tr.dead td{color:var(--pierce)}
+.edges tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto;min-width:0}
+
+.card{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:20px 22px;
+  display:flex;flex-direction:column;gap:12px;min-width:0}
+.sect{display:flex;flex-direction:column;gap:14px;min-width:0}
+.note{border-left:2px solid var(--slide);padding-left:16px;display:flex;flex-direction:column;
+  gap:8px}
+.note .sub{max-width:72ch}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+.warn{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--scar);
+  border-left-width:2px;background:color-mix(in srgb,var(--scar) 10%,var(--panel));
+  padding:13px 16px;border-radius:3px;font-size:.84rem}
+.warn .wk{font-family:var(--ff-m);font-size:.68rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--scar);flex:0 0 auto;padding-top:2px}
+.ptab{width:100%;border-collapse:collapse;font-family:var(--ff-m);font-size:.78rem}
+.ptab th{text-align:left;font-weight:500;font-size:.66rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding:7px 14px 7px 0;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+.ptab td{padding:9px 14px 9px 0;border-bottom:1px solid var(--line2);
+  font-variant-numeric:tabular-nums;vertical-align:top}
+.ptab td.nt{font-family:var(--ff-b);font-size:.78rem;color:var(--muted);
+  white-space:normal;min-width:19ch;line-height:1.5}
+.ptab tr:last-child td{border-bottom:0}
+.ptab .mine{color:var(--pierce)}
+.hand{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:14px 22px}
+.hc{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hc .hh{font-family:var(--ff-d);font-size:.9rem;font-weight:600}
+.hc ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.hc li{font-family:var(--ff-m);font-size:.74rem;display:flex;gap:8px;min-width:0}
+.hc li b{font-weight:500;flex:0 0 auto;color:var(--fg)}
+.hc li span{color:var(--muted);min-width:0}
+footer{color:var(--muted);font-size:.78rem;display:flex;flex-direction:column;gap:6px;
+  font-family:var(--ff-m)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:460px){
+  .wrap{padding-inline:16px;gap:22px}
+  .role .rl{flex-basis:62px}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="sect">
+    <p class="eyebrow">amr3 · phân rã tiếp tuyến và pháp tuyến</p>
+    <h1>Tấm giấy và con dao</h1>
+    <p class="lede">Nếu cấu trúc là một tờ giấy, một meme đủ lớn là con dao đâm qua nó,
+      không phải vật trượt song song với nó. Trang này quay núm giữa hai khả năng đó và
+      để engine trả lời bằng ba con số.</p>
+    <p class="sub">Toàn bộ 78 biến của mô hình sáu tầng được giữ nguyên, chỉ xếp lại theo
+      vị trí hình học thay vì theo phương trình chúng xuất hiện trong đó. Một tham số mới
+      duy nhất: <span class="mono">τ</span>, phần pháp tuyến của tác động từ tấm này lên
+      tấm kia. Ở <span class="mono">τ = 0</span> mọi con số dưới đây bằng không, và mô hình
+      trở lại đúng bản gốc tới chữ số máy.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="gl"></canvas>
+    <div class="chips">
+      <span class="chip slide" id="chipSlide">trượt song song</span>
+      <span class="chip pierce" id="chipPierce">đâm xuyên</span>
+      <span class="chip" id="chipLam">Λ = —</span>
+      <span class="chip" id="chipScar">sẹo ξ₅ = 0</span>
+    </div>
+    <p class="hint">kéo để quay · lăn để phóng</p>
+  </div>
+
+  <div class="ctl">
+    <div class="fld">
+      <label for="tau">số hoành τ₄₅ <b id="tauV">0,000</b></label>
+      <input type="range" id="tau" min="0" max="14" step="1" value="0">
+      <p class="sub" style="font-size:.76rem">0 = hoàn toàn tiếp tuyến, đổi hệ số trên tấm.
+        1 = hoàn toàn pháp tuyến, dịch chính tấm. Vùng khả dụng dừng ở
+        <span class="mono">0,262</span>, và núm vẫn đi quá được — để thấy vì sao không nên.</p>
+    </div>
+    <div class="fld">
+      <label for="amp">biên độ cú sốc meme <b id="ampV">0,80</b></label>
+      <input type="range" id="amp" min="0.60" max="1.00" step="0.02" value="0.80">
+      <p class="sub" style="font-size:.76rem">Chín biến ẩn Tầng 4 cùng lên mức này. Ngưỡng
+        đâm H* = 0,45 tính trên H_soc, không trên biên độ.</p>
+    </div>
+    <div class="fld">
+      <label for="ordA">thứ tự hai sự kiện</label>
+      <div class="seg" role="group" aria-label="thứ tự">
+        <button id="ordA" aria-pressed="true">meme → cứng</button>
+        <button id="ordB" aria-pressed="false">cứng → meme</button>
+      </div>
+      <p class="sub" style="font-size:.76rem">Cùng hai sự kiện, cùng trạng thái cuối. Chênh
+        lệch còn lại chỉ có thể đến từ thứ tự.</p>
+    </div>
+    <div class="fld">
+      <label>con dao</label>
+      <button class="btn" id="pull">rút dao ra — xem cái lỗ còn lại</button>
+      <p class="sub" style="font-size:.76rem">Trạng thái về đúng chỗ cũ. Vết lõm thì không.</p>
+    </div>
+  </div>
+
+  <div class="warn" id="oz" hidden>
+    <span class="wk">ngoài vùng</span>
+    <span id="ozT"></span>
+  </div>
+
+  <section class="sect">
+    <h2>Ba đại lượng, cả ba bằng không trong bản gốc</h2>
+    <p class="sub">Không phải vì được hiệu chỉnh về không, mà vì phương trình E9 là một hàm
+      của trạng thái và không mang theo lịch sử nào. Hai đường tới cùng một trạng thái
+      <em>bắt buộc</em> cho cùng một đầu ra.</p>
+    <div class="instr">
+      <div class="gauge" id="gComm" data-live="zero">
+        <span class="k">giao hoán tử ‖[L₄, L₅]‖</span>
+        <span class="v" id="vComm">0,000e+0</span>
+        <span class="n">Đảo thứ tự hai sự kiện. Bằng không nghĩa là thứ tự không có nghĩa.</span>
+      </div>
+      <div class="gauge" id="gHol" data-live="zero">
+        <span class="k">holonomy H(γ)</span>
+        <span class="v" id="vHol">+0,000e+0</span>
+        <span class="n">Đi một vòng kín rồi về đúng điểm xuất phát. Khác không nghĩa là
+          vòng ấy mang theo cái lỗ.</span>
+      </div>
+      <div class="gauge" id="gRes" data-live="zero">
+        <span class="k">dư âm sau khi gỡ sốc</span>
+        <span class="v" id="vRes">+0,000000</span>
+        <span class="n">§10.1.3 nói E8 hoàn nguyên hoàn toàn theo f_hard, nên con số này
+          phải bằng không.</span>
+      </div>
+      <div class="gauge" id="gTh">
+        <span class="k">ngưỡng θ₀ sau cùng</span>
+        <span class="v" id="vTh">0,5000</span>
+        <span class="n">Vị trí tấm Σ₅. Assumption 9.2 giữ nó cố định trước tầng tự sự;
+          τ &gt; 0 là bỏ chính giả thiết đó.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="bandwrap">
+    <h2>Con dao chỉ để lại cái lỗ phụ thuộc thứ tự trong một dải</h2>
+    <p class="sub">Đây là chỗ hình học trả lại một thứ mà ẩn dụ không cho. Quét biên độ cú
+      sốc ở τ hiện tại: dưới một mức thì giấy chỉ võng, trên một mức thì giấy đã nát và thêm
+      một nhát không đổi gì nữa — vì <span class="mono">L_max</span>, một trọng số vai biên
+      độ, chặn tổng thiệt hại.</p>
+    <canvas id="band"></canvas>
+    <p class="sub" id="bandNote" style="font-size:.78rem"></p>
+  </section>
+
+  <section class="card">
+    <h2>Phân mảnh chính trị thôi là đầu vào</h2>
+    <p class="sub">Trong bản gốc, <span class="mono">T_frag</span> là một biến ẩn Tầng 2 mà
+      người dùng tự điền vào, mặc định 0,420. Khi cạnh Σ₄→Σ₂ mang phần pháp tuyến, nó có
+      thêm một thành phần sinh ra từ vết đâm: <span class="mono">T_frag(t) = T_frag⁰ + ρ·ξ₂(t)</span>,
+      ρ = 0,50. Phân mảnh trở thành hệ quả của việc tầng meme đâm qua tầng cấu trúc.</p>
+    <div class="instr">
+      <div class="gauge"><span class="k">T_frag — không phản hồi</span>
+        <span class="v" id="vF0">0,7000</span>
+        <span class="n">Đúng giá trị đã điền vào. Mô hình không có cách nào tự sinh ra nó.</span></div>
+      <div class="gauge" id="gF1"><span class="k">T_frag — có phản hồi</span>
+        <span class="v" id="vF1">0,7000</span>
+        <span class="n">Sinh ra từ vết sẹo cấu trúc ξ₂ ở τ₄* hiện tại.</span></div>
+      <div class="gauge"><span class="k">vết sẹo cấu trúc ξ₂</span>
+        <span class="v" id="vF2">0,0000</span>
+        <span class="n">Tấm Σ₂ bị dịch đi bao nhiêu và không quay lại.</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Năm hằng số, và xuất xứ của từng cái</h2>
+    <p class="sub">Cả 39 trọng số của bản gốc đều mang vùng khả dụng cộng xuất xứ cộng tình
+      trạng bằng chứng. Năm hằng số dưới đây ban đầu là số trần, và τ = 1,00 được nhận im
+      lặng — đúng loại khuyết tật mà sách tự ghi cho Case Study 8: một giá trị không gì bác
+      bỏ được. Giờ chúng mang đủ bộ, và bốn cái cuối ghi rõ là <span class="mono"
+      style="color:var(--pierce)">tôi đặt</span>.</p>
+    <div class="scroll">
+      <table class="ptab">
+        <thead><tr><th></th><th>nền</th><th>vùng khả dụng</th><th>xuất xứ</th>
+          <th>bằng chứng</th><th>ghi chú</th></tr></thead>
+        <tbody id="params"></tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p class="sub">Trần của τ suy từ dữ liệu, không từ sách. Tỉ số phương sai cho
+        <span class="mono">VR(36) = 0,884</span> và <span class="mono">VR(60) = 0,842</span>,
+        cả hai không phân biệt được với bước ngẫu nhiên — nên thành phần thường trực của
+        <span class="mono">ln DXY</span> tồn tại. Hai kênh đo được lấy 48,2% biến thiên 36
+        tháng và phần dư 51,8% <em>phẳng</em> từ chân trời 6 tới 36 tháng. Với
+        <span class="mono">d(ln DXY)/dθ₀ = +48,31</span> điểm % mỗi đơn vị, sinh ra toàn bộ
+        phần dư đó cần <span class="mono">ξ₅ = 0,1319</span>, trong khi một cú sốc meme cực
+        đại ở τ = 1 cho <span class="mono">0,5040</span>. Tỉ số là 0,262.</p>
+      <p class="sub">Đây là chặn <strong>trên</strong>, không phải ước lượng điểm: phần dư
+        còn chứa mọi thứ khác mà hai kênh không đo. τ vẫn chưa nhận dạng được điểm, nhưng nó
+        thôi là một núm quay tự do.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Mười chín ô người dùng vẫn tự điền</h2>
+    <p class="sub">Không phải khuyết tật trang này vá được. Nó là trạng thái thật, đọc ra từ
+      trường <span class="mono">measurement</span> của chính bản gốc, và việc duy nhất đúng
+      để làm với nó là dán nhãn — để một số tự điền không bị lẫn với một số đã đo. Chín biến
+      Tầng 4 ghi nguyên văn “No series”. Và <span class="mono">H_soc</span> không phải đầu
+      vào: nó là điểm bất động của Eq (8.8) giải <em>từ</em> chín ô đó, nên một giá trị
+      <span class="mono">H_soc</span> là hệ quả của chín số tự điền.</p>
+    <div class="hand" id="hand"></div>
+  </section>
+
+  <section class="sect">
+    <h2>Cùng 78 biến, xếp theo vị trí thay vì theo phương trình</h2>
+    <p class="sub">Bản gốc xếp biến theo công thức nó là hệ số của — một cách xếp đại số.
+      Bốn vai dưới đây là bốn thứ khác nhau về hình học, và chỉ vai
+      <span class="mono" style="color:var(--pierce)">vị trí</span> là vai một vết đâm tác động
+      tới được: đâm xuyên nghĩa là tấm bị dịch, không phải điểm trên tấm bị dịch.</p>
+    <div class="atlas" id="atlas"></div>
+  </section>
+
+  <section class="card">
+    <h2>Bảy cạnh liên tấm, và cạnh bị để không</h2>
+    <p class="sub">Tập cạnh không được thêm cái nào. Nó lấy nguyên từ trường
+      <span class="mono">gamma</span> trong registry của bản gốc, nơi các tải trọng liên tầng
+      đã được mã hoá sẵn. Đúng một cạnh có tải bằng 0,00 — và nó là cạnh con dao nói về.</p>
+    <div class="scroll">
+      <table class="edges">
+        <thead><tr><th>cạnh</th><th>biến nguồn</th><th>trọng số đích</th><th>vai đích</th><th>tải</th></tr></thead>
+        <tbody id="edges"></tbody>
+      </table>
+    </div>
+    <div class="note">
+      <p class="sub">Tầng 4 là tấm duy nhất không có trọng số vị trí, nên nó không bị đâm
+        ngược lại. Đó không phải thiếu sót của bản đồ: Remark 10.2 viết Tầng 4 “là một
+        <em>nguồn</em>… nó tác động lên Tầng 3 và 5 và không bị gì tác động lại”. Một nguồn
+        không có vị trí để bị dịch.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Chỗ phải nói ngược lại</h2>
+    <p class="sub">“Hình học chứ chưa bao giờ là đại số” là một phân đôi giả. Tính hoành —
+      chính xác là cắt ngang chứ không trượt song song — là một điều kiện trên hạng Jacobian,
+      và đó là đại số. Phần nội dung của luận điểm thì đúng nguyên vẹn, nhưng bất biến đúng
+      không phải số chiều: một mô hình hai tầng có vết sẹo thì đã là đâm xuyên, một mô hình
+      mười tầng không có vết sẹo thì vẫn là trượt. Bất biến đúng là <strong>các toán tử tầng
+      có giao hoán hay không</strong>, và giao hoán tử là con số thứ nhất ở trên.</p>
+    <p class="sub">Hai thứ còn phải làm trước khi đây thành mô hình chứ không phải hình ảnh.
+      Thứ nhất: pháp tuyến của một tấm là gì, tính bằng đơn vị nào — không có nó thì “cắt
+      ngang” chưa đo được, và τ vẫn là một núm chứ chưa là một đại lượng. Thứ hai:
+      H* = 0,45 và p = 0,35 hiện do tôi đặt. Chúng được nêu bằng số nên bác bỏ được ở sự
+      kiện cực đoan kế tiếp, nhưng nêu bằng số thì chưa phải ước lượng được.</p>
+  </section>
+
+  <footer>
+    <hr>
+    <p>Vi Nhật Sơn · <em>The Architecture of Market Regimes</em> · amr3, bản đọc hình học</p>
+    <p>Chỉ dành cho mục đích học thuật. Không con số nào ở đây là khuyến nghị đầu tư hay
+      dự báo thị trường.</p>
+  </footer>
+
+</div>
+
+<script>
+const D={"taus":[0.0,0.02,0.05,0.08,0.11,0.14,0.17,0.2,0.23,0.262,0.33,0.45,0.6,0.8,1.0],"amps":[0.6,0.62,0.64,0.66,0.68,0.7,0.72,0.74,0.76,0.78,0.8,0.82,0.84,0.86,0.88,0.9,0.92,0.94,0.96,0.98,1.0],"keys":["comm","hol","res","scarA","scarB","th0","psi","hsoc"],"grid":{"0.000":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.0,0.0,0.0,0.0,0.0,0.5,0.789119,0.461614],[0.0,0.0,0.0,0.0,0.0,0.5,0.784841,0.507104],[0.0,0.0,0.0,0.0,0.0,0.5,0.779543,0.559759],[0.0,0.0,0.0,0.0,0.0,0.5,0.773038,0.619696],[0.0,0.0,0.0,0.0,0.0,0.5,0.765268,0.685596],[0.0,0.0,0.0,0.0,0.0,0.5,0.756456,0.753927],[0.0,0.0,0.0,0.0,0.0,0.5,0.749144,0.809137],[0.0,0.0,0.0,0.0,0.0,0.5,0.744423,0.847303],[0.0,0.0,0.0,0.0,0.0,0.5,0.740176,0.880286],[0.0,0.0,0.0,0.0,0.0,0.5,0.736463,0.907893],[0.0,0.0,0.0,0.0,0.0,0.5,0.733287,0.930362],[0.0,0.0,0.0,0.0,0.0,0.5,0.730606,0.948211]],"0.020":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.000202796,-0.000225254,9.58125e-05,0.000756136,0.000551898,0.49952,0.788743,0.461614],[0.0010342,-0.00107282,0.000439715,0.00362233,0.00268975,0.497719,0.782861,0.507104],[0.0020338,-0.00197944,0.000773501,0.00673184,0.00510441,0.495803,0.775479,0.559759],[0.00315229,-0.00290862,0.00107128,0.00997233,0.007747,0.493852,0.766377,0.619696],[0.00427812,-0.00380393,0.0013094,0.0131409,0.0104743,0.491983,0.755587,0.685596],[0.00526763,-0.00459962,0.00148101,0.0159661,0.0130346,0.49033,0.743621,0.753927],[0.00592622,-0.00516544,0.00159272,0.0179356,0.0148724,0.48916,0.733888,0.809137],[0.00632209,-0.00553599,0.00167172,0.0191855,0.01604,0.488395,0.727618,0.847303],[0.00661588,-0.00583019,0.00173661,0.0201503,0.01695,0.48779,0.722135,0.880286],[0.00682518,-0.00605619,0.00178961,0.020868,0.0176311,0.487326,0.717481,0.907893],[0.00696834,-0.00622421,0.00183215,0.0213829,0.0181219,0.486981,0.71362,0.930362],[0.00706181,-0.00634482,0.0018654,0.0217378,0.0184619,0.486733,0.71046,0.948211]],"0.050":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00050643,-0.000563631,0.000239646,0.00188937,0.00137936,0.498799,0.788179,0.461614],[0.00256605,-0.00269233,0.00110169,0.00902664,0.00671233,0.494305,0.779919,0.507104],[0.00498237,-0.00497907,0.00194116,0.0166955,0.0127034,0.489545,0.769525,0.559759],[0.00754235,-0.00732473,0.00269237,0.0245371,0.0191884,0.484731,0.756841,0.619696],[0.0098302,-0.00957349,0.00329462,0.0319458,0.0257436,0.480178,0.742217,0.685596],[0.0113715,-0.0115445,0.0037295,0.0381904,0.0316806,0.476236,0.726769,0.753927],[0.0119654,-0.012918,0.00401296,0.042259,0.0357525,0.473514,0.714856,0.809137],[0.0121053,-0.0138032,0.00421361,0.0447234,0.0382512,0.471771,0.707465,0.847303],[0.0120245,-0.0144914,0.00437852,0.0465288,0.0401279,0.470421,0.701304,0.880286],[0.0118185,-0.0150076,0.00451329,0.0478017,0.0414808,0.469412,0.696315,0.907893],[0.0115587,-0.0153811,0.0046215,0.0486639,0.0424185,0.468684,0.692351,0.930362],[0.0112903,-0.0156406,0.00470613,0.0492188,0.0430396,0.468178,0.689236,0.948211]],"0.080":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00080938,-0.000902601,0.000383616,0.00302142,0.00220634,0.49808,0.787617,0.461614],[0.00407278,-0.00432378,0.00176654,0.0143938,0.0107198,0.490902,0.777013,0.507104],[0.00779507,-0.00801263,0.00311768,0.0264837,0.0202279,0.483332,0.763753,0.559759],[0.0114825,-0.0117949,0.00433039,0.0385857,0.0303943,0.475738,0.747884,0.619696],[0.0142757,-0.0153952,0.00530506,0.0495992,0.0404344,0.468656,0.730265,0.685596],[0.0153604,-0.0184979,0.00601017,0.0583658,0.0491829,0.462659,0.712709,0.753927],[0.0149676,-0.0206094,0.00647036,0.0637417,0.05492,0.458632,0.700021,0.809137],[0.0142546,-0.0219454,0.00679638,0.0668973,0.0583434,0.456104,0.692538,0.847303],[0.0133511,-0.02296,0.00706451,0.0691329,0.0608489,0.454196,0.686598,0.880286],[0.0124314,-0.0237009,0.00728375,0.0706631,0.0626178,0.452808,0.681999,0.907893],[0.0115935,-0.0242207,0.00745986,0.0716698,0.0638233,0.451837,0.678487,0.930362],[0.0108765,-0.0245686,0.00759763,0.0722941,0.0646091,0.451188,0.675821,0.948211]],"0.110":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00111163,-0.00124216,0.000527723,0.00415227,0.00303284,0.49736,0.787056,0.461614],[0.00555248,-0.00596679,0.00243426,0.0197214,0.0147113,0.487509,0.774145,0.507104],[0.0104589,-0.0110771,0.00430304,0.0360828,0.0276722,0.477167,0.758172,0.559759],[0.01494,-0.0163082,0.00598527,0.0520886,0.0413456,0.466882,0.739527,0.619696],[0.0176144,-0.0212421,0.00734056,0.0661051,0.0545157,0.457433,0.71971,0.685596],[0.0174872,-0.0254117,0.00832278,0.0766894,0.0655559,0.44962,0.70118,0.753927],[0.015662,-0.0281749,0.00896462,0.0828944,0.0725288,0.444523,0.688677,0.809137],[0.0139638,-0.0298887,0.00941969,0.086498,0.0766359,0.441393,0.681686,0.847303],[0.0122685,-0.0311575,0.0097942,0.0890242,0.0796257,0.439089,0.676385,0.880286],[0.0107711,-0.0320581,0.0101006,0.0907469,0.0817494,0.437461,0.672442,0.907893],[0.00953876,-0.0326696,0.0103467,0.0918801,0.0832195,0.436359,0.669533,0.930362],[0.00856436,-0.033062,0.0105394,0.0925826,0.0842,0.435653,0.667386,0.948211]],"0.140":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00141317,-0.0015823,0.000671968,0.00528189,0.00385887,0.496641,0.786496,0.461614],[0.00700332,-0.00762091,0.00310485,0.0250075,0.0186863,0.484128,0.771315,0.507104],[0.0129632,-0.0141692,0.0054972,0.0454821,0.0350311,0.471052,0.752789,0.559759],[0.0178998,-0.0208534,0.00765691,0.0650348,0.0520281,0.458169,0.731776,0.619696],[0.0199123,-0.0270885,0.00940094,0.0815257,0.0679798,0.44652,0.710481,0.685596],[0.0181218,-0.0322432,0.0106671,0.0934393,0.0808799,0.437127,0.691838,0.753927],[0.0148276,-0.0355624,0.0114954,0.100244,0.0888329,0.431182,0.680089,0.809137],[0.0123147,-0.0375788,0.0120832,0.104223,0.093549,0.427607,0.673849,0.847303],[0.0100947,-0.0390334,0.0125671,0.107029,0.0970429,0.425044,0.669306,0.880286],[0.00830773,-0.0400368,0.0129632,0.108966,0.0995997,0.423284,0.666042,0.907893],[0.00694355,-0.0406959,0.0132816,0.11026,0.101437,0.422131,0.663701,0.930362],[0.00593025,-0.0411008,0.0135309,0.111079,0.102717,0.421424,0.662012,0.948211]],"0.170":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00171397,-0.00192303,0.000816349,0.00641028,0.0046844,0.495922,0.785937,0.461614],[0.00842362,-0.00928573,0.0037783,0.0302501,0.0226439,0.480757,0.768525,0.507104],[0.0152995,-0.0172859,0.00670013,0.0546738,0.0423002,0.464991,0.74761,0.559759],[0.0203622,-0.0254196,0.00934521,0.077429,0.062432,0.449606,0.724624,0.619696],[0.0212802,-0.0329104,0.011486,0.0959575,0.0808389,0.435926,0.702473,0.685596],[0.017659,-0.0389562,0.0130428,0.108898,0.0952786,0.42518,0.68432,0.753927],[0.0131264,-0.0427335,0.0140623,0.116224,0.104124,0.418584,0.673604,0.809137],[0.0100984,-0.0449818,0.0147863,0.120581,0.109504,0.414698,0.668177,0.847303],[0.00766535,-0.0465634,0.0153828,0.123696,0.113625,0.411981,0.664363,0.880286],[0.00585621,-0.0476257,0.0158711,0.125884,0.116759,0.410164,0.6617,0.907893],[0.00456602,-0.0483026,0.0162639,0.127376,0.119102,0.409009,0.659833,0.930362],[0.00366247,-0.048702,0.0165714,0.128346,0.120799,0.408329,0.658509,0.948211]],"0.200":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00201404,-0.00226434,0.000960868,0.0075374,0.00550943,0.495204,0.785379,0.461614],[0.00981177,-0.0109608,0.00445461,0.0354474,0.0265836,0.477399,0.765777,0.507104],[0.0174618,-0.020424,0.00791179,0.0636527,0.0494755,0.458984,0.74264,0.559759],[0.0223407,-0.0299958,0.0110501,0.089288,0.0725523,0.441197,0.718057,0.619696],[0.0218539,-0.0386856,0.0135956,0.109511,0.0931217,0.425655,0.695564,0.685596],[0.0164596,-0.0455217,0.0154495,0.123311,0.108899,0.413769,0.678288,0.753927],[0.0110477,-0.049663,0.016665,0.131156,0.118684,0.406695,0.668696,0.809137],[0.00781181,-0.0520818,0.0175287,0.135916,0.124863,0.402604,0.66404,0.847303],[0.0054232,-0.0537453,0.0182406,0.139373,0.129777,0.399806,0.660864,0.880286],[0.0037759,-0.0548379,0.0188237,0.141845,0.133646,0.397976,0.658699,0.907893],[0.00267811,-0.0555184,0.0192928,0.143568,0.136622,0.396838,0.657207,0.930362],[0.0019551,-0.0559083,0.0196602,0.144721,0.138834,0.396188,0.656164,0.948211]],"0.230":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00231334,-0.00260622,0.00110552,0.00866325,0.00633397,0.494486,0.784822,0.461614],[0.0111663,-0.0126457,0.00513377,0.0405979,0.0305045,0.474052,0.76307,0.507104],[0.0194458,-0.0235801,0.00913216,0.0724163,0.0565536,0.453034,0.737879,0.559759],[0.0238596,-0.0345718,0.0127714,0.100637,0.0823877,0.432948,0.712049,0.619696],[0.0217777,-0.0443946,0.0157294,0.122297,0.104869,0.41571,0.689626,0.685596],[0.0148227,-0.0519179,0.017887,0.13688,0.121894,0.40288,0.67345,0.753927],[0.00891533,-0.0563382,0.0193029,0.145269,0.132761,0.395471,0.66496,0.809137],[0.0057248,-0.0588786,0.0203097,0.150458,0.139911,0.391251,0.660989,0.847303],[0.00355376,-0.0605942,0.0211399,0.154286,0.145784,0.388417,0.658348,0.880286],[0.00216647,-0.0617047,0.0218202,0.157073,0.150522,0.386588,0.656581,0.907893],[0.0013069,-0.0623889,0.0223676,0.159059,0.154229,0.385464,0.655381,0.930362],[0.000779357,-0.0627773,0.0227964,0.160427,0.157022,0.384826,0.654551,0.948211]],"0.262":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00263175,-0.00297152,0.00125997,0.00986272,0.00721291,0.49372,0.784229,0.461614],[0.0125726,-0.0144531,0.00586133,0.0460384,0.0346657,0.470496,0.760231,0.507104],[0.0213637,-0.0269629,0.0104434,0.0815261,0.0639931,0.446751,0.733031,0.559759],[0.0250094,-0.0394414,0.0146254,0.112216,0.0925679,0.424327,0.706224,0.619696],[0.0211382,-0.0503922,0.0180318,0.135205,0.116867,0.405459,0.684224,0.685596],[0.0128513,-0.0585373,0.0205203,0.150596,0.13523,0.391817,0.66933,0.753927],[0.00679623,-0.063176,0.022155,0.1596,0.147471,0.384172,0.661926,0.809137],[0.00384999,-0.0658083,0.0233179,0.165274,0.155844,0.37987,0.658579,0.847303],[0.00201326,-0.067564,0.0242775,0.169528,0.162898,0.377014,0.656402,0.880286],[0.000938311,-0.068696,0.025064,0.172687,0.168672,0.375178,0.654968,0.907893],[0.000330484,-0.0693982,0.025697,0.174994,0.173227,0.374041,0.654007,0.930362],[7.46475e-06,-0.0698047,0.0261931,0.176632,0.17668,0.373383,0.653349,0.948211]],"0.330":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00330537,-0.00374994,0.0015887,0.0124066,0.00907873,0.492095,0.782974,0.461614],[0.0154221,-0.0183268,0.00741813,0.0574103,0.043432,0.462988,0.754366,0.507104],[0.0247618,-0.0341895,0.0132623,0.10008,0.0794127,0.433632,0.723515,0.559759],[0.0260516,-0.0497,0.0186261,0.135201,0.113173,0.406632,0.695659,0.619696],[0.0185399,-0.06275,0.0230137,0.160603,0.140837,0.384871,0.675322,0.685596],[0.00868622,-0.0718727,0.0262282,0.177738,0.162454,0.370046,0.663136,0.753927],[0.00324504,-0.0767868,0.0283436,0.188162,0.178432,0.362165,0.657631,0.809137],[0.00113088,-0.0795619,0.0298504,0.194963,0.189935,0.357742,0.655279,0.847303],[6.37311e-05,-0.0814245,0.0310945,0.200254,0.199848,0.354784,0.653802,0.880286],[0.000420386,-0.0826725,0.032115,0.204359,0.208018,0.352806,0.652855,0.907893],[0.00061235,-0.0835065,0.0329368,0.207513,0.214464,0.351486,0.652233,0.930362],[0.000668727,-0.0840502,0.033581,0.209886,0.219349,0.350626,0.651815,0.948211]],"0.450":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00448375,-0.00513063,0.00217051,0.0168787,0.0123647,0.489232,0.780774,0.461614],[0.0199616,-0.0252566,0.0102007,0.0768235,0.0586336,0.449908,0.744593,0.507104],[0.0286236,-0.046973,0.018343,0.130301,0.105301,0.41128,0.709199,0.559759],[0.0245076,-0.0672726,0.0258833,0.171412,0.14649,0.377487,0.681952,0.619696],[0.0125451,-0.0830418,0.0320906,0.200574,0.179764,0.352221,0.665483,0.685596],[0.00325079,-0.0930879,0.0366567,0.221041,0.20942,0.336409,0.657152,0.753927],[4.51994e-05,-0.0983272,0.0396688,0.234421,0.234092,0.32822,0.653801,0.809137],[0.000689889,-0.101521,0.0418173,0.243701,0.251995,0.32324,0.652459,0.847303],[0.000838188,-0.103909,0.0435931,0.251433,0.267298,0.319524,0.651654,0.880286],[0.000776062,-0.105765,0.0450506,0.257862,0.279729,0.316637,0.651159,0.907893],[0.000663572,-0.10723,0.046225,0.263129,0.289408,0.314359,0.650849,0.930362],[0.000556847,-0.108371,0.0471459,0.267335,0.296675,0.312586,0.650649,0.948211]],"0.600":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00593697,-0.0068688,0.00290085,0.0224365,0.0164599,0.485661,0.778052,0.461614],[0.0247081,-0.0340468,0.0137417,0.0998775,0.077117,0.433887,0.733437,0.507104],[0.0301897,-0.0627658,0.0248797,0.164145,0.135326,0.384845,0.695239,0.559759],[0.0195471,-0.0878442,0.035293,0.211123,0.183992,0.344641,0.671032,0.619696],[0.00622174,-0.105609,0.043916,0.244954,0.226034,0.316879,0.658973,0.685596],[0.000102117,-0.116398,0.0502788,0.270347,0.269489,0.300115,0.653679,0.753927],[0.000868488,-0.122632,0.0544821,0.288726,0.306476,0.290419,0.651738,0.809137],[0.000784242,-0.127071,0.057482,0.302347,0.332431,0.283499,0.651015,0.847303],[0.000582995,-0.130873,0.0599621,0.314377,0.354146,0.277559,0.650611,0.880286],[0.000410274,-0.134157,0.0619979,0.324797,0.3715,0.272414,0.650384,0.907893],[0.000289055,-0.136939,0.0636383,0.333564,0.384865,0.268042,0.650253,0.930362],[0.000209273,-0.139217,0.0649245,0.3407,0.39483,0.264451,0.650176,0.948211]],"0.800":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00783783,-0.0092069,0.00387993,0.029788,0.0218977,0.480916,0.774473,0.461614],[0.0294097,-0.0458889,0.0185696,0.12854,0.100803,0.413138,0.720387,0.507104],[0.0283685,-0.0830306,0.0339026,0.204005,0.17174,0.352239,0.681975,0.559759],[0.0122876,-0.112464,0.0483773,0.257918,0.230029,0.306227,0.662711,0.619696],[0.0015343,-0.131806,0.0604132,0.298671,0.288277,0.276098,0.654734,0.685596],[0.000816856,-0.144499,0.0692992,0.332958,0.352975,0.256091,0.651632,0.753927],[0.000599648,-0.153547,0.0751635,0.360748,0.405967,0.241617,0.65063,0.809137],[0.000352135,-0.160587,0.0793433,0.382031,0.441893,0.230193,0.650309,0.847303],[0.000194245,-0.166883,0.0827942,0.401187,0.471495,0.219827,0.650155,0.880286],[0.000107829,-0.172353,0.0856232,0.417823,0.494947,0.210687,0.650082,0.907893],[6.25254e-05,-0.176935,0.0878999,0.431754,0.512924,0.202925,0.650046,0.930362],[3.85728e-05,-0.180633,0.0896832,0.44303,0.526292,0.196581,0.650028,0.948211]],"1.000":[[0.0,0.0,0.0,0.0,0.0,0.5,0.805965,0.243278],[0.0,0.0,0.0,0.0,0.0,0.5,0.805031,0.257948],[0.0,0.0,0.0,0.0,0.0,0.5,0.803969,0.274059],[0.0,0.0,0.0,0.0,0.0,0.5,0.802751,0.29189],[0.0,0.0,0.0,0.0,0.0,0.5,0.801341,0.311794],[0.0,0.0,0.0,0.0,0.0,0.5,0.799692,0.334205],[0.0,0.0,0.0,0.0,0.0,0.5,0.797742,0.359664],[0.0,0.0,0.0,0.0,0.0,0.5,0.795408,0.388833],[0.0,0.0,0.0,0.0,0.0,0.5,0.792581,0.42251],[0.00969333,-0.0115675,0.00486505,0.037068,0.0273086,0.47619,0.770952,0.461614],[0.0323497,-0.0577421,0.0235166,0.154981,0.123354,0.393136,0.709312,0.507104],[0.0242065,-0.101981,0.0432541,0.239523,0.204885,0.322525,0.673049,0.559759],[0.00672626,-0.134108,0.0620002,0.300332,0.274701,0.272489,0.6581,0.619696],[0.000217478,-0.155224,0.0775833,0.349695,0.352864,0.23891,0.652629,0.685596],[0.000625161,-0.17125,0.0890455,0.396042,0.438862,0.21254,0.650728,0.753927],[0.000261945,-0.183863,0.0965768,0.435507,0.506774,0.190978,0.650219,0.809137],[0.000115745,-0.193434,0.101924,0.465417,0.5521,0.173987,0.650088,0.847303],[5.02651e-05,-0.20175,0.106325,0.492072,0.58926,0.158684,0.650036,0.880286],[2.23159e-05,-0.208715,0.109921,0.514927,0.618637,0.145409,0.650016,0.907893],[1.05013e-05,-0.214348,0.112808,0.533845,0.641132,0.134319,0.650008,0.930362],[5.43777e-06,-0.218765,0.115064,0.549019,0.657853,0.125375,0.650004,0.948211]]},"frag":[[0.0,0,0.7,0.0,4.39085],[0.0,1,0.7,0.0,4.39085],[0.02,0,0.7,0.0415529,4.35077],[0.02,1,0.71538,0.041599,4.34283],[0.05,0,0.7,0.104643,4.3045],[0.05,1,0.738769,0.104768,4.2917],[0.08,0,0.7,0.167815,4.27079],[0.08,1,0.762342,0.167705,4.25769],[0.11,0,0.7,0.230902,4.24649],[0.11,1,0.785869,0.23019,4.23456],[0.14,0,0.7,0.293997,4.22783],[0.14,1,0.809146,0.292339,4.21734],[0.17,0,0.7,0.357787,4.21362],[0.17,1,0.832803,0.355058,4.20448],[0.2,0,0.7,0.421718,4.20971],[0.2,1,0.85645,0.417551,4.20177],[0.23,0,0.7,0.485729,4.207],[0.23,1,0.88004,0.479705,4.20009],[0.262,0,0.7,0.554024,4.20503],[0.262,1,0.905088,0.545507,4.19895],[0.33,0,0.7,0.698329,4.20281],[0.33,1,0.957712,0.683143,4.19758],[0.45,0,0.7,0.952267,4.20181],[0.45,1,1.0,0.924109,4.19679],[0.6,0,0.7,1.26969,4.20172],[0.6,1,1.0,1.22512,4.19679],[0.8,0,0.7,1.69292,4.20172],[0.8,1,1.0,1.63239,4.19679],[1.0,0,0.7,2.11615,4.20172],[1.0,1,1.0,2.03817,4.19679]],"sheets":{"0":{"label":"Σ₀ cơ học","n":18,"roles":{"giá mang":["S_off","bank","cap","coll","crypto","debt","ext","fed","gamma","hcap","hedge","micro","net","res","swap","trans","tsy"],"vị trí":["theta_sub"]}},"1":{"label":"Σ₁ trạng thái","n":7,"roles":{"biên độ":["w_sigma"],"giá mang":["X_health"],"tiếp tuyến":["w_F","w_H","w_X"],"vị trí":["sigma_star"],"độ cong":["theta"]}},"2":{"label":"Σ₂ cấu trúc","n":17,"roles":{"biên độ":["delta_off"],"giá mang":["E_inf","G_pol","H_cap","M_trust","R_US","T_frag"],"tiếp tuyến":["gam_E","gam_G","gam_R","gam_T","phi_G","phi_M","phi_R","phi_T"],"vị trí":["gam_0","phi_0"]}},"3":{"label":"Σ₃ phản thân","n":12,"roles":{"giá mang":["A_meta","M_shock","V_USD"],"tiếp tuyến":["a_A","a_H","a_I","a_M","a_V","a_sigma"],"vị trí":["kappa_base"],"độ cong":["kappa_R","r_rev"]}},"4":{"label":"Σ₄ tâm lý-kỹ thuật","n":9,"roles":{"giá mang":["A_alg","C_src","E_sys","P_AI","P_habit","R_div","R_fric","S_access","T_exp"]}},"5":{"label":"Σ₅ thế kỷ","n":10,"roles":{"biên độ":["L_max"],"giá mang":["Au_sub","C_alt"],"tiếp tuyến":["b_F","w_Calt","w_Tfrag","w_gold"],"vị trí":["theta_0"],"độ cong":["k_psi","w_CT"]}},"9":{"label":"⊥ trú ẩn","n":5,"roles":{"giá mang":["prec"],"tiếp tuyến":["alpha_prec","lam_1","w_prec_short"],"độ cong":["lam_2"]}}},"edges":[{"src":1,"dst":9,"var":"sigma","w":"alpha_prec","load":0.7},{"src":1,"dst":9,"var":"sigma","w":"lam_1","load":0.6},{"src":4,"dst":2,"var":"hsoc","w":"phi_R","load":0.6},{"src":4,"dst":3,"var":"hsoc","w":"a_M","load":-0.45},{"src":4,"dst":3,"var":"hsoc","w":"a_sigma","load":0.5},{"src":4,"dst":3,"var":"iimp","w":"a_sigma","load":0.3},{"src":4,"dst":5,"var":"hsoc","w":"theta_0","load":0.0}],"base_ln":4.570542114377274,"n_vars":78,"ceiling":0.262,"params":[["τ",0.0,0.0,0.262,"OPEN","PARTIAL","chặn trên 0,262 suy từ phần thường trực 36 tháng chưa giải thích; chưa nhận dạng được điểm. Nền 0,0 vì đó là amr, và là giả thuyết không."],["H*",0.45,0.3,0.7,"ENGINE_CONVENTION","UNTESTED","ngưỡng đâm trên H_soc. TÔI ĐẶT. H_soc không có chuỗi quan sát nào, nên ngưỡng này chưa ước lượng được — chỉ nêu bằng số để bác bỏ được."],["p",0.35,0.0,1.0,"ENGINE_CONVENTION","UNTESTED","độ sâu mỗi đơn vị vượt ngưỡng. TÔI ĐẶT."],["q",2.5,0.0,5.0,"ENGINE_CONVENTION","UNTESTED","giấy căng sâu hơn giấy chùng bao nhiêu lần. TÔI ĐẶT. Dạng của số hạng thì không: II = 4Λ′ lấy từ chính biên Λ′ ≤ ¼ của Prop. 8.2."],["ρ",0.5,0.0,1.0,"ENGINE_CONVENTION","UNTESTED","vết sẹo cấu trúc đẩy T_frag lên bao nhiêu. TÔI ĐẶT."]],"hand":{"2":[["G_pol","chỉ có biến thay thế"],["H_cap","biến ẩn, quy trình đo còn mở"],["M_trust","biến ẩn, quy trình đo còn mở"],["R_US","biến ẩn, quy trình đo còn mở"],["T_frag","chỉ có biến thay thế"]],"5":[["C_alt","dựng được, chưa dựng"]],"3":[["A_meta","không có chuỗi"],["V_USD","dựng được, chưa dựng"]],"4":[["A_alg","không có chuỗi"],["C_src","dựng được, chưa dựng"],["E_sys","không có chuỗi"],["P_AI","không có chuỗi"],["P_habit","không có chuỗi"],["R_div","không có chuỗi"],["R_fric","không có chuỗi"],["S_access","không có chuỗi"],["T_exp","không có chuỗi"]],"0":[["S_off","không có chuỗi"]],"1":[["X_health","chỉ có biến thay thế"]]},"n_hand":19};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const hex = n => new THREE.Color(css(n) || "#888888");
+
+/* ── số liệu: định dạng kiểu Việt ───────────────────────────────────────── */
+const dec = (v,n) => v.toFixed(n).replace(".", ",");
+function sci(v,sign){
+  if (Math.abs(v) < 1e-15) return (sign ? "+" : "") + "0,000e+0";
+  const s = v.toExponential(3);
+  const [m,e] = s.split("e");
+  const em = (+e >= 0 ? "+" : "-") + Math.abs(+e);
+  const mm = m.replace(".", ",");
+  return (sign && v > 0 ? "+" : "") + mm + "e" + em;
+}
+const K = {}; D.keys.forEach((k,i) => K[k] = i);
+const ampIdx = a => {
+  let b = 0, d = 9;
+  D.amps.forEach((x,i) => { const q = Math.abs(x-a); if (q < d) { d = q; b = i; } });
+  return b;
+};
+const cell = (tau,amp) => D.grid[tau.toFixed(3)][ampIdx(amp)];
+const fragAt = (tau,fb) => {
+  let best = null, d = 9;
+  D.frag.forEach(r => { if (r[1] === (fb?1:0)) { const q = Math.abs(r[0]-tau);
+    if (q < d) { d = q; best = r; } } });
+  return best;
+};
+
+/* ── trạng thái ─────────────────────────────────────────────────────────── */
+const S = { ti:0, tau:0, amp:0.80, order:"A", pulled:false };
+const OVER = t => t > D.ceiling + 1e-9;
+
+/* ── sân khấu 3-D ───────────────────────────────────────────────────────── */
+const cv = document.getElementById("gl");
+const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+
+// Σ₄ trên cùng vì Remark 10.2: nó tác động và không bị tác động lại.
+// Σ₅ ngay dưới nó vì đó là cặp tấm luận điểm nói về; Ψ_str nhân toàn bộ E9 nên
+// nó nằm giữa tầng tự sự và khối cơ học. Σ₀–Σ₃ xếp dưới theo thứ tự tầng.
+const LAY = [
+  {id:"4", y: 1.95, op:0.07, wop:0.26},
+  {id:"5", y: 0.70, op:0.14, wop:0.60},
+  {id:"3", y: 0.05, op:0.05, wop:0.20},
+  {id:"2", y:-0.60, op:0.05, wop:0.20},
+  {id:"1", y:-1.25, op:0.05, wop:0.18},
+  {id:"0", y:-1.90, op:0.05, wop:0.18}
+];
+const W = 4.4, Dp = 3.0;
+const sheets = {};
+
+function makeLabel(text, colTok){
+  const c = document.createElement("canvas"), s = 2;
+  c.width = 320*s; c.height = 64*s;
+  const g = c.getContext("2d");
+  g.scale(s,s);
+  g.font = "500 30px 'IBM Plex Mono', monospace";
+  g.fillStyle = css(colTok) || "#999";
+  g.textBaseline = "middle";
+  g.fillText(text, 2, 32);
+  const t = new THREE.CanvasTexture(c);
+  t.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true,
+    depthWrite:false}));
+  sp.scale.set(1.9, 0.38, 1);
+  return sp;
+}
+
+const SHEET_NAME = {"0":"Σ₀ cơ học","1":"Σ₁ trạng thái","2":"Σ₂ cấu trúc",
+  "3":"Σ₃ phản thân","4":"Σ₄ tâm lý-kỹ thuật","5":"Σ₅ thế kỷ","9":"⊥ trú ẩn"};
+
+function buildSheets(){
+  LAY.forEach(L => {
+    const geo = new THREE.PlaneGeometry(W, Dp, 22, 15);
+    geo.rotateX(-Math.PI/2);
+    const base = Float32Array.from(geo.attributes.position.array);
+    const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color: hex("--paper"), transparent:true, opacity:L.op,
+      side:THREE.DoubleSide, depthWrite:false }));
+    const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color: L.id === "5" ? hex("--paper") : hex("--line"), wireframe:true,
+      transparent:true, opacity:L.wop, depthWrite:false }));
+    const grp = new THREE.Group();
+    grp.add(fill); grp.add(wire);
+    grp.position.y = L.y;
+    const lb = makeLabel(SHEET_NAME[L.id], L.id === "5" ? "--paper" : "--muted");
+    lb.position.set(-W/2 - 0.1, 0.16, Dp/2 + 0.12);
+    grp.add(lb);
+    scene.add(grp);
+    sheets[L.id] = {grp, geo, base, y0:L.y};
+  });
+
+  // đường viền mờ ở cao độ θ₀ gốc của Σ₅ — để thấy tấm đã tụt bao nhiêu
+  const g = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-W/2,0,-Dp/2), new THREE.Vector3(W/2,0,-Dp/2),
+    new THREE.Vector3(W/2,0,Dp/2), new THREE.Vector3(-W/2,0,Dp/2),
+    new THREE.Vector3(-W/2,0,-Dp/2)]);
+  const ghost = new THREE.Line(g, new THREE.LineDashedMaterial({
+    color: hex("--muted"), dashSize:0.14, gapSize:0.1, transparent:true, opacity:0.5}));
+  ghost.computeLineDistances();
+  ghost.position.y = sheets["5"].y0;
+  scene.add(ghost);
+}
+
+/* con dao: gốc của group ĐÚNG bằng mũi dao */
+let knife, knifeGrp, ring, arrPar, arrPerp;
+function buildKnife(){
+  const h = 1.35;
+  const g = new THREE.ConeGeometry(0.13, h, 4);
+  g.rotateX(Math.PI);          // mũi xuống
+  g.translate(0, h/2, 0);      // mũi về gốc toạ độ
+  knife = new THREE.Mesh(g, new THREE.MeshBasicMaterial({
+    color: hex("--pierce"), transparent:true, opacity:0.92}));
+  const edge = new THREE.Mesh(g, new THREE.MeshBasicMaterial({
+    color: hex("--pierce"), wireframe:true, transparent:true, opacity:0.5}));
+  knifeGrp = new THREE.Group();
+  knifeGrp.add(knife); knifeGrp.add(edge);
+  scene.add(knifeGrp);
+
+  ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.028, 8, 28),
+    new THREE.MeshBasicMaterial({color: hex("--scar"), transparent:true, opacity:0}));
+  ring.rotation.x = Math.PI/2;
+  scene.add(ring);
+
+  arrPar  = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(),
+    0.001, hex("--slide").getHex(), 0.16, 0.09);
+  arrPerp = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(),
+    0.001, hex("--pierce").getHex(), 0.16, 0.09);
+  scene.add(arrPar); scene.add(arrPerp);
+}
+
+/* ── quay / phóng bằng tay, không thêm thư viện ─────────────────────────── */
+let yaw = -0.62, pitch = 0.40, dist = 8.2, drag = false, px = 0, py = 0;
+function placeCam(){
+  camera.position.set(
+    dist*Math.cos(pitch)*Math.sin(yaw),
+    dist*Math.sin(pitch),
+    dist*Math.cos(pitch)*Math.cos(yaw));
+  camera.lookAt(0, -0.1, 0);
+}
+cv.addEventListener("pointerdown", e => { drag = true; px = e.clientX; py = e.clientY;
+  cv.classList.add("drag"); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointerup", e => { drag = false; cv.classList.remove("drag");
+  try { cv.releasePointerCapture(e.pointerId); } catch(_){} });
+cv.addEventListener("pointermove", e => {
+  if (!drag) return;
+  yaw -= (e.clientX - px) * 0.006;
+  pitch = Math.max(-0.22, Math.min(1.15, pitch + (e.clientY - py) * 0.005));
+  px = e.clientX; py = e.clientY; placeCam();
+});
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  dist = Math.max(4.6, Math.min(14, dist + Math.sign(e.deltaY) * 0.5));
+  placeCam();
+}, {passive:false});
+
+function resize(){
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+
+/* ── biến dạng tấm ──────────────────────────────────────────────────────── */
+function dent(id, depth, drop){
+  const sh = sheets[id]; if (!sh) return;
+  const p = sh.geo.attributes.position, b = sh.base;
+  for (let i = 0; i < p.count; i++){
+    const x = b[i*3], z = b[i*3+2];
+    const r2 = x*x + z*z;
+    p.array[i*3+1] = b[i*3+1] - depth * Math.exp(-r2 / (2 * 0.42 * 0.42));
+  }
+  p.needsUpdate = true;
+  sh.geo.computeBoundingSphere();
+  sh.grp.position.y = sh.y0 - drop;
+}
+
+/* ── vẽ lại toàn bộ ─────────────────────────────────────────────────────── */
+function paint(){
+  const c = cell(S.tau, S.amp);
+  const scar = S.order === "A" ? c[K.scarA] : c[K.scarB];
+  const th0 = c[K.th0], psi = c[K.psi];
+  const lam = Math.min(1, Math.max(0, (1 - psi) / 0.35));
+  const pierce = S.tau > 1e-9;
+
+  // dàn đo
+  const setG = (id, el, v, txt) => {
+    document.getElementById(el).textContent = txt;
+    document.getElementById(id).dataset.live = Math.abs(v) < 1e-12 ? "zero" : "live";
+  };
+  setG("gComm","vComm", c[K.comm], sci(c[K.comm], false));
+  setG("gHol","vHol",  c[K.hol],  sci(c[K.hol], true));
+  setG("gRes","vRes",  c[K.res],  (c[K.res] >= 0 ? "+" : "") + dec(c[K.res], 6));
+  document.getElementById("vTh").textContent = dec(th0, 4);
+  document.getElementById("tauV").textContent = dec(S.tau, 3);
+  const oz = document.getElementById("oz");
+  oz.hidden = !OVER(S.tau);
+  if (OVER(S.tau)) document.getElementById("ozT").innerHTML =
+    "τ = <b>" + dec(S.tau,3) + "</b> vượt trần <b>" + dec(D.ceiling,3)
+    + "</b> suy từ phần thường trực 36 tháng chưa giải thích. Engine vẫn chạy ra số — "
+    + "quy ước của bản gốc là trả về nhãn chứ không trả về lỗi. Và để ý: giao hoán tử ở "
+    + "đây <em>nhỏ hơn</em> ở trần, vì τ lớn đẩy Σ₅ vào bão hoà nơi L_max chặn hết. "
+    + "Quay núm quá mức không phải mạnh hơn — nó tự thắng mình.";
+  document.getElementById("ampV").textContent = dec(S.amp, 2);
+
+  // nhãn trên sân khấu
+  document.getElementById("chipSlide").classList.toggle("on", !pierce);
+  document.getElementById("chipPierce").classList.toggle("on", pierce);
+  document.getElementById("chipLam").textContent = "Λ = " + dec(lam, 3);
+  document.getElementById("chipScar").textContent = "sẹo ξ₅ = " + dec(scar, 4);
+
+  // hình học
+  const vScar = Math.min(0.62, scar * 1.15);
+  const drop = Math.min(0.5, (0.50 - th0) * 1.1);
+  dent("5", vScar, drop);
+
+  const y5 = sheets["5"].grp.position.y;
+  const ang = -(1 - S.tau) * Math.PI/2;
+  knifeGrp.rotation.z = ang;
+  const tipY = S.pulled ? (y5 + 1.05)
+             : (pierce ? y5 - vScar - 0.1 : y5 + 0.03);
+  const tipX = pierce ? 0 : -0.9 + 1.8 * ((Date.now() % 4000) / 4000);
+  knifeGrp.position.set(tipX, tipY, 0);
+  knife.material.opacity = S.pulled ? 0.3 : 0.92;
+
+  ring.position.set(0, y5 - vScar + 0.01, 0);
+  ring.material.opacity = scar > 1e-9 ? 0.95 : 0;
+  ring.scale.setScalar(0.7 + Math.min(1.8, scar * 2.2));
+
+  const L = 1.25;
+  arrPar.position.set(0, y5 + 0.02, 0);
+  arrPar.setLength(Math.max(0.001, (1 - S.tau) * L), 0.15, 0.085);
+  arrPar.visible = (1 - S.tau) > 0.02;
+  arrPerp.position.set(0, y5 + 0.02, 0);
+  arrPerp.setLength(Math.max(0.001, S.tau * L), 0.15, 0.085);
+  arrPerp.visible = S.tau > 0.02;
+
+  // phân mảnh
+  const f0 = fragAt(S.tau, false), f1 = fragAt(S.tau, true);
+  document.getElementById("vF0").textContent = dec(f0[2], 4);
+  document.getElementById("vF1").textContent = dec(f1[2], 4);
+  document.getElementById("vF2").textContent = dec(f1[3], 4);
+  document.getElementById("gF1").dataset.live =
+    f1[2] > f0[2] + 1e-9 ? "live" : "zero";
+
+  drawBand();
+}
+
+/* ── dải ────────────────────────────────────────────────────────────────── */
+const bc = document.getElementById("band");
+function drawBand(){
+  const w = bc.clientWidth, h = bc.clientHeight, r = Math.min(devicePixelRatio||1, 2);
+  if (!w) return;
+  bc.width = w*r; bc.height = h*r;
+  const g = bc.getContext("2d");
+  g.setTransform(r,0,0,r,0,0);
+  g.clearRect(0,0,w,h);
+
+  const row = D.grid[S.tau.toFixed(3)];
+  const ys = row.map(c => c[K.comm]);
+  const peak = Math.max.apply(null, ys);
+  const PL = 58, PR = 14, PT = 14, PB = 34;
+  const iw = Math.max(10, w - PL - PR), ih = Math.max(10, h - PT - PB);
+  const X = i => PL + iw * i / (D.amps.length - 1);
+  const top = peak > 0 ? peak * 1.18 : 1;
+  const Y = v => PT + ih - ih * (v / top);
+
+  // vùng chế độ
+  let firstNZ = -1, peakI = 0, satI = -1;
+  ys.forEach((v,i) => { if (firstNZ < 0 && v > 0) firstNZ = i; if (v > ys[peakI]) peakI = i; });
+  if (peak > 0) for (let i = peakI + 1; i < ys.length; i++){
+    if (ys[i] < peak * 0.1) { satI = i; break; }
+  }
+  const zone = (a, b, tok, op) => {
+    if (a < 0 || b <= a) return;
+    g.fillStyle = css(tok); g.globalAlpha = op;
+    g.fillRect(X(a), PT, X(b) - X(a), ih); g.globalAlpha = 1;
+  };
+  if (peak > 0){
+    zone(0, firstNZ, "--slide", 0.09);
+    zone(firstNZ, satI < 0 ? ys.length - 1 : satI, "--pierce", 0.13);
+    if (satI >= 0) zone(satI, ys.length - 1, "--scar", 0.08);
+  } else {
+    zone(0, ys.length - 1, "--slide", 0.09);
+  }
+
+  // lưới + trục
+  g.strokeStyle = css("--line"); g.lineWidth = 1;
+  g.font = "400 10px 'IBM Plex Mono', monospace";
+  g.fillStyle = css("--muted");
+  for (let k = 0; k <= 4; k++){
+    const v = top * k / 4, y = Y(v);
+    g.globalAlpha = 0.5; g.beginPath(); g.moveTo(PL, y); g.lineTo(w - PR, y);
+    g.stroke(); g.globalAlpha = 1;
+    g.textAlign = "right"; g.textBaseline = "middle";
+    g.fillText(peak > 0 ? v.toExponential(1).replace(".", ",") : "0", PL - 7, y);
+  }
+  g.textAlign = "center"; g.textBaseline = "top";
+  D.amps.forEach((a,i) => { if (i % 4 === 0)
+    g.fillText(dec(a,2), X(i), PT + ih + 8); });
+  g.textAlign = "left";
+  g.fillText("biên độ cú sốc meme", PL, PT + ih + 21);
+
+  // đường
+  if (peak > 0){
+    g.strokeStyle = css("--pierce"); g.lineWidth = 2; g.beginPath();
+    ys.forEach((v,i) => i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)));
+    g.stroke();
+    const pk = peakI;
+    g.fillStyle = css("--pierce");
+    g.beginPath(); g.arc(X(pk), Y(ys[pk]), 3.4, 0, 7); g.fill();
+  } else {
+    g.strokeStyle = css("--slide"); g.lineWidth = 2; g.beginPath();
+    g.moveTo(PL, Y(0)); g.lineTo(w - PR, Y(0)); g.stroke();
+  }
+
+  // biên độ đang chọn
+  const ci = ampIdx(S.amp);
+  g.strokeStyle = css("--fg"); g.globalAlpha = 0.55; g.lineWidth = 1;
+  g.setLineDash([3,3]); g.beginPath();
+  g.moveTo(X(ci), PT); g.lineTo(X(ci), PT + ih); g.stroke();
+  g.setLineDash([]); g.globalAlpha = 1;
+
+  const note = document.getElementById("bandNote");
+  if (peak <= 0){
+    note.textContent = "τ = 0: giao hoán tử bằng không ở mọi biên độ. Không có dải nào, "
+      + "vì không có vết đâm nào. Đây là toàn bộ bản gốc.";
+  } else {
+    const pa = D.amps[peakI];
+    const deepA = row[peakI][K.scarA];
+    const deepB = row[peakI][K.scarB];
+    note.textContent = "Đỉnh ‖[L₄,L₅]‖ = " + sci(peak,false) + " tại biên độ "
+      + dec(pa,2) + ", nơi " + (deepA > deepB ? "meme-trước" : "cứng-trước")
+      + " đâm sâu hơn (" + dec(Math.max(deepA,deepB),4) + " so "
+      + dec(Math.min(deepA,deepB),4) + "). "
+      + (satI >= 0 ? "Từ biên độ " + dec(D.amps[satI],2)
+          + " trở lên, Λ → 1 và giao hoán tử sập về gần không — L_max đã chặn tổng "
+          + "thiệt hại, nên thêm một nhát không đổi được đầu ra nữa."
+        : "Trong khoảng quét này tấm chưa bão hoà hẳn.");
+  }
+}
+
+/* ── bản đồ 78 biến ─────────────────────────────────────────────────────── */
+const ROLE_ORDER = ["vị trí","tiếp tuyến","độ cong","biên độ","giá mang"];
+function buildAtlas(){
+  const host = document.getElementById("atlas");
+  ["4","5","3","2","1","0","9"].forEach(id => {
+    const s = D.sheets[id]; if (!s) return;
+    const el = document.createElement("div");
+    el.className = "sh";
+    const roles = ROLE_ORDER.filter(r => s.roles[r] && s.roles[r].length)
+      .map(r => '<div class="role' + (r === "vị trí" ? " pos" : "") + '">'
+        + '<span class="rl">' + r + '</span><span class="rv">'
+        + s.roles[r].join(", ") + "</span></div>").join("");
+    el.innerHTML = '<header><span class="nm">' + s.label
+      + '</span><span class="ct">' + s.n + " biến</span></header>"
+      + '<div class="roles">' + roles + "</div>";
+    host.appendChild(el);
+  });
+}
+
+function roleOf(wkey, dstId){
+  const s = D.sheets[String(dstId)];
+  if (!s) return "—";
+  for (const r in s.roles) if (s.roles[r].indexOf(wkey) >= 0) return r;
+  return "—";
+}
+function buildEdges(){
+  const tb = document.getElementById("edges");
+  D.edges.forEach(e => {
+    const tr = document.createElement("tr");
+    if (Math.abs(e.load) < 1e-12) tr.className = "dead";
+    tr.innerHTML = "<td>Σ" + sub(e.src) + " → Σ" + sub(e.dst) + "</td>"
+      + "<td>" + e.var + "</td><td>" + e.w + "</td>"
+      + "<td>" + roleOf(e.w, e.dst) + "</td>"
+      + "<td>" + (e.load >= 0 ? "+" : "") + dec(e.load, 2) + "</td>";
+    tb.appendChild(tr);
+  });
+}
+const SUBS = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","9":"⊥"};
+const sub = n => SUBS[String(n)] || String(n);
+
+/* ── năm hằng số, mười chín ô tự điền ──────────────────────────────────── */
+function buildParams(){
+  const tb = document.getElementById("params");
+  D.params.forEach(p => {
+    const mine = p[4] === "ENGINE_CONVENTION";
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + p[0] + "</td><td>" + dec(p[1],3) + "</td>"
+      + "<td>[" + dec(p[2],3) + ", " + dec(p[3],3) + "]</td>"
+      + '<td class="' + (mine ? "mine" : "") + '">' + p[4] + "</td>"
+      + "<td>" + p[5] + '</td><td class="nt">' + p[6] + "</td>";
+    tb.appendChild(tr);
+  });
+}
+function buildHand(){
+  const host = document.getElementById("hand");
+  ["4","2","3","5","1","0"].forEach(id => {
+    const rows = D.hand[id]; if (!rows || !rows.length) return;
+    const el = document.createElement("div");
+    el.className = "hc";
+    el.innerHTML = '<span class="hh">' + D.sheets[id].label + "</span><ul>"
+      + rows.map(r => "<li><b>" + r[0] + "</b><span>" + r[1] + "</span></li>").join("")
+      + "</ul>";
+    host.appendChild(el);
+  });
+}
+
+/* ── nối dây ────────────────────────────────────────────────────────────── */
+document.getElementById("tau").addEventListener("input", e => {
+  S.ti = parseInt(e.target.value, 10);
+  S.tau = D.taus[S.ti];
+  S.pulled = false; paint();
+});
+document.getElementById("amp").addEventListener("input", e => {
+  S.amp = parseFloat(e.target.value); paint();
+});
+const oa = document.getElementById("ordA"), ob = document.getElementById("ordB");
+function setOrder(o){
+  S.order = o;
+  oa.setAttribute("aria-pressed", String(o === "A"));
+  ob.setAttribute("aria-pressed", String(o === "B"));
+  paint();
+}
+oa.addEventListener("click", () => setOrder("A"));
+ob.addEventListener("click", () => setOrder("B"));
+document.getElementById("pull").addEventListener("click", e => {
+  S.pulled = !S.pulled;
+  e.currentTarget.textContent = S.pulled
+    ? "cắm dao lại — cái lỗ vẫn ở đó" : "rút dao ra — xem cái lỗ còn lại";
+  paint();
+});
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function loop(){
+  if (!reduced && S.tau <= 1e-9 && !S.pulled){
+    const y5 = sheets["5"].grp.position.y;
+    knifeGrp.position.x = -0.9 + 1.8 * ((Date.now() % 4200) / 4200);
+    knifeGrp.position.y = y5 + 0.03;
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+buildSheets(); buildKnife(); buildAtlas(); buildEdges(); buildParams(); buildHand();
+resize(); placeCam(); paint(); loop();
+addEventListener("resize", () => { resize(); drawBand(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  location.reload();
+});
+})();
+</script>

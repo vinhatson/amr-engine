@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMR Engine</title>
+<meta name="description" content="The Architecture of Market Regimes: a runnable six-layer model of DXY, with three interactive panels and a measurement of whether shock order leaves a permanent mark.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#FBFAF8; --panel:#FFFFFF; --fg:#17201C; --muted:#5C6963; --dim:#8B968F;
+  --rule:#E3E7E3; --line:#CFD6D1;
+  --accent:#1C6B5A; --accent-soft:#E8F2EE;
+  --warn:#8A5A1B; --warn-soft:#FBF2E4;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --serif:"IBM Plex Serif",Georgia,serif;
+  --maxw:62rem;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1412; --panel:#151D1A; --fg:#E7EDE9; --muted:#9BA8A1; --dim:#6F7C75;
+    --rule:#222D28; --line:#2C3832;
+    --accent:#5FC2A8; --accent-soft:#16241F;
+    --warn:#E0B468; --warn-soft:#241C10;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --panel:#151D1A; --fg:#E7EDE9; --muted:#9BA8A1; --dim:#6F7C75;
+  --rule:#222D28; --line:#2C3832;
+  --accent:#5FC2A8; --accent-soft:#16241F;
+  --warn:#E0B468; --warn-soft:#241C10;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:17px; line-height:1.65;
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 16px}
+a{color:var(--accent); text-decoration:none; border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--accent)}
+code,.mono{font-family:var(--mono); font-size:.9em}
+
+/* ---- language switch ---- */
+.langbar{
+  position:sticky; top:0; z-index:20; background:var(--bg);
+  border-bottom:1px solid var(--rule);
+}
+.langbar .wrap{display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:10px 16px; flex-wrap:wrap}
+.brand{font-family:var(--mono); font-weight:500; letter-spacing:.02em}
+.brand span{color:var(--dim)}
+.controls{display:flex; gap:6px; align-items:center}
+button.sw{
+  font-family:var(--mono); font-size:13px; cursor:pointer;
+  background:var(--panel); color:var(--muted);
+  border:1px solid var(--line); border-radius:6px; padding:5px 11px;
+}
+button.sw[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+:root[data-theme="dark"] button.sw[aria-pressed="true"],
+html:not([data-theme="light"]) button.sw[aria-pressed="true"]{color:#06100D}
+
+/* ---- hero ---- */
+header.hero{padding:46px 0 30px; border-bottom:1px solid var(--rule)}
+h1{font-family:var(--serif); font-size:clamp(1.9rem,5.2vw,3rem); line-height:1.12;
+  margin:0 0 .5rem; font-weight:600; letter-spacing:-.01em}
+.sub{font-size:clamp(1rem,2.4vw,1.2rem); color:var(--muted); margin:0 0 1.5rem; max-width:46rem}
+.cta{display:flex; flex-wrap:wrap; gap:10px}
+.btn{
+  display:inline-block; font-family:var(--mono); font-size:14px;
+  padding:10px 16px; border-radius:7px; border:1px solid var(--line);
+  background:var(--panel); color:var(--fg);
+}
+.btn:hover{border-color:var(--accent); color:var(--accent)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{color:#fff; opacity:.9}
+:root[data-theme="dark"] .btn.primary, html:not([data-theme="light"]) .btn.primary{color:#06100D}
+
+/* ---- sections ---- */
+section{padding:38px 0; border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+h2{font-family:var(--serif); font-size:1.5rem; margin:0 0 .4rem; font-weight:600}
+h2+.lede{color:var(--muted); margin:0 0 1.4rem; max-width:46rem}
+
+.cards{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{
+  background:var(--panel); border:1px solid var(--rule); border-radius:10px;
+  padding:18px; display:flex; flex-direction:column; gap:8px;
+}
+.card h3{margin:0; font-size:1.03rem; font-family:var(--mono); font-weight:500}
+.card p{margin:0; color:var(--muted); font-size:.95rem; flex:1}
+.card .go{font-family:var(--mono); font-size:13px; margin-top:4px}
+
+table{width:100%; border-collapse:collapse; font-size:.93rem; margin:0 0 1rem}
+th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--rule); vertical-align:top}
+th{font-family:var(--mono); font-weight:500; font-size:.82rem;
+  text-transform:uppercase; letter-spacing:.05em; color:var(--dim)}
+td.num{font-family:var(--mono); white-space:nowrap}
+.zero{color:var(--accent); font-weight:600}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+pre{
+  background:var(--panel); border:1px solid var(--rule); border-radius:8px;
+  padding:14px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.5; margin:0 0 1rem;
+}
+blockquote{
+  margin:0 0 1rem; padding:12px 16px; background:var(--accent-soft);
+  border-left:3px solid var(--accent); border-radius:0 7px 7px 0;
+  font-family:var(--serif); font-size:1.05rem;
+}
+.note{
+  background:var(--warn-soft); border-left:3px solid var(--warn);
+  padding:12px 16px; border-radius:0 7px 7px 0; margin:0 0 1rem; font-size:.95rem;
+}
+.note strong{color:var(--warn)}
+ul{margin:0 0 1rem; padding-left:1.25rem} li{margin:.3rem 0}
+footer{padding:30px 0 50px; color:var(--dim); font-size:.9rem}
+footer .wrap>div{margin:.25rem 0}
+[data-lang]{display:none}
+[data-lang].on{display:block}
+span[data-lang].on,a[data-lang].on{display:inline}
+</style>
+</head>
+<body>
+
+<div class="langbar"><div class="wrap">
+  <div class="brand">amr-engine <span>· Vi Nhật Sơn</span></div>
+  <div class="controls">
+    <button class="sw" id="b-en" aria-pressed="true">EN</button>
+    <button class="sw" id="b-vi" aria-pressed="false">VI</button>
+    <button class="sw" id="b-theme" aria-pressed="false" title="Light / dark">◐</button>
+  </div>
+</div></div>
+
+<!-- ============================ ENGLISH ============================ -->
+<div data-lang="en" class="on">
+
+<header class="hero"><div class="wrap">
+  <h1>Does the order of two shocks leave a permanent mark?</h1>
+  <p class="sub">A runnable six-layer model of the dollar index, and a measurement
+  of something the original model cannot express: the hole that stays behind
+  after a closed loop returns to where it started.</p>
+  <div class="cta">
+    <a class="btn primary" href="panels/manifold_panel.html">Open the 3D panel</a>
+    <a class="btn" href="panels/geometry_panel.html">Geometry panel</a>
+    <a class="btn" href="panels/regimes_panel.html">Regimes panel</a>
+    <a class="btn" href="https://github.com/REPO_SLUG">Source on GitHub</a>
+  </div>
+</div></header>
+
+<section><div class="wrap">
+  <h2>Start with the panels</h2>
+  <p class="lede">Three self-contained pages. Nothing to install, no server, no
+  build step — they run entirely in your browser.</p>
+  <div class="cards">
+    <div class="card">
+      <h3>manifold_panel</h3>
+      <p>The six sheets in 3D. All 78 variables as sliders grouped by sheet, a
+      knife you can open and close, and a toggle between two memory models.
+      Fire two shocks in either order and watch for a scar.</p>
+      <a class="go" href="panels/manifold_panel.html">open →</a>
+    </div>
+    <div class="card">
+      <h3>geometry_panel</h3>
+      <p>The same 78 variables, placed by geometric role rather than by which
+      equation they are a coefficient of. Position, tangent, curvature,
+      amplitude.</p>
+      <a class="go" href="panels/geometry_panel.html">open →</a>
+    </div>
+    <div class="card">
+      <h3>regimes_panel</h3>
+      <p>Drive the six layers directly and watch the three-block decomposition
+      respond. Eleven scenarios built in, five of them historical case
+      studies.</p>
+      <a class="go" href="panels/regimes_panel.html">open →</a>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:var(--muted);font-size:.92rem">The panel
+  interface is in Vietnamese. Variable names, Greek symbols and numbers are
+  not language-specific, and each sheet group is labelled Σ₀ … Σ₅.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>The result worth arguing about</h2>
+  <p class="lede">Three quantities that are all <em>exactly</em> zero in the
+  original model — not small, zero, and zero for a structural reason.</p>
+  <div class="tscroll"><table>
+    <tr><th></th><th>τ ≡ 0</th><th>hysteresis · τ = 0.294</th><th>fatigue · τ = 0.122</th></tr>
+    <tr><td>commutator ‖[L₄, L₅]‖</td><td class="num zero">0.000e+00</td><td class="num zero">0.000e+00</td><td class="num">1.720e-02</td></tr>
+    <tr><td>holonomy H(γ)</td><td class="num zero">+0.000e+00</td><td class="num">−7.318e-02</td><td class="num">−4.056e-02</td></tr>
+    <tr><td>residue after unwinding</td><td class="num zero">+0.000000</td><td class="num">+0.027931</td><td class="num">+0.011078</td></tr>
+  </table></div>
+  <p>The original model's layer E9 is a function of the current state and
+  carries no history, so two paths reaching the same state <strong>must</strong>
+  produce the same output. It is not missing a term — it sits in a
+  <em>function class</em> that cannot express "the hole that stays behind."</p>
+  <p>That turns into an empirical question, and it does not need a long sample:</p>
+  <blockquote>Does the order of two shocks change the permanent level, when the
+  final state is identical?<br>Yes → fatigue. No → hysteresis.</blockquote>
+  <p>Note the hysteresis commutator is zero <em>by the definition of the
+  operator</em>: it takes a running maximum over history, and two orderings
+  traverse the same state set. Holonomy and residue are non-zero in both. A
+  closed loop returns to the starting state; the scar remains.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Three packages, three different things</h2>
+  <p class="lede">The relationship between them is the interesting part.</p>
+  <div class="tscroll"><table>
+    <tr><th>package</th><th>what it is</th><th>imports amr?</th></tr>
+    <tr><td class="mono">amr</td><td>the book's model — six layers at standard form, with boundary checks</td><td>—</td></tr>
+    <tr><td class="mono">amr2</td><td>a <strong>different</strong> model: the book's errors corrected, fitted to real FRED data, with out-of-sample backtests</td><td>no, by design</td></tr>
+    <tr><td class="mono">amr3</td><td>the <strong>same</strong> model re-read in geometric coordinates: sheets, scars, path dependence</td><td>yes, runs it inside</td></tr>
+  </table></div>
+  <p><code>amr2</code> stands apart because it is a rival model and has to be
+  comparable. <code>amr3</code> nests <code>amr</code> because it is the same
+  model in different coordinates, and the way you prove a re-reading is faithful
+  is to run the original inside it:</p>
+  <pre>τ ≡ 0  →  no overrides  →  ln DXY identical to amr, difference 0.000e+00</pre>
+  <p><code>amr3</code> adds exactly one parameter and <strong>no new edges</strong>
+  — the edge set is taken unchanged from the <code>gamma</code> field of
+  <code>amr/registry.py</code>.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Run it yourself</h2>
+  <p class="lede">Python 3.9+. No dependencies at all — standard library only.</p>
+<pre>git clone https://github.com/REPO_SLUG.git
+cd amr-engine
+python -m amr check            # structural constraints, with the slack on each
+
+python -m amr list             # the scenarios, and what the book says about each
+python -m amr run narrative    # a full qualitative reading
+python -m amr audit            # every scenario against the book's own numbers
+python -m amr2                 # book model vs corrected model, same exam
+python -m amr3                 # the atlas, three measurements, the τ sweep
+
+python tests/test_engine.py    # amr
+python tests/test_amr2.py      # amr2
+python tests/test_amr3.py      # amr3</pre>
+  <p>All three suites pass on Python 3.12 across Windows, macOS and Linux. They
+  check structure, not just output:
+  <code>test_atlas_covers_every_amr_variable_exactly_once</code> asserts 78 of
+  78, nothing added and nothing dropped.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Honest limits</h2>
+  <div class="note"><strong>Read this before quoting any number.</strong>
+  <code>amr</code> is qualitative: it produces an arrow scale and a three-block
+  decomposition, not a calibrated point forecast.</div>
+  <ul>
+    <li><strong>The rendered narrative is Vietnamese only.</strong> The method
+    is <code>narrative_vi()</code>; there is no <code>narrative_en()</code> yet.
+    Everything structured — numbers, arrow scale, block attribution,
+    <code>evidence_mix</code> — is language neutral, and the registry carries a
+    <code>name_en</code> field. An English renderer is the most useful
+    contribution anyone could make.</li>
+    <li><strong>On Σ₅ the tautness rule is exact; on Σ₁ it is an
+    approximation</strong>, because σ_sys is a linear composite rather than a
+    logistic. The code says so rather than passing over it.</li>
+    <li><strong>τ defaults to 0</strong>, which is the null. Quote no τ &gt; 0
+    result without stating τ and the memory model.</li>
+    <li><strong>One data defect is carried, not hidden.</strong> CPI for 2025-10
+    does not exist — the BLS did not publish during the shutdown that began
+    2025-10-01 — so that month is interpolated and <code>row.cpi_imputed</code>
+    is True there.</li>
+    <li><strong>The geometric framing is a reading, not a dimension count.</strong>
+    A two-sheet model that scars is already a puncture; a ten-sheet model that
+    does not is still a slide. The invariant that matters is whether the layer
+    operators commute.</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Documentation</h2>
+  <div class="cards">
+    <div class="card"><h3>Full guide</h3><p>Every command and every claim, explained.</p><a class="go" href="docs/GUIDE.en.md">read →</a></div>
+    <div class="card"><h3>SPEC.md</h3><p>The mathematics in full.</p><a class="go" href="SPEC.md">read →</a></div>
+    <div class="card"><h3>User manual</h3><p>The amr3 manual, as a page.</p><a class="go" href="docs/user-manual-en.html">read →</a></div>
+    <div class="card"><h3>The paper</h3><p>The Architecture of Market Regimes.</p><a class="go" href="docs/The_Architecture_of_Market_Regimes_Model.pdf">PDF →</a></div>
+  </div>
+</div></section>
+
+</div>
+
+<!-- ============================ VIETNAMESE ============================ -->
+<div data-lang="vi">
+
+<header class="hero"><div class="wrap">
+  <h1>Thứ tự hai cú sốc có để lại vết hằn thường trực không?</h1>
+  <p class="sub">Một mô hình sáu tầng chạy được của chỉ số đô la, và một phép đo
+  cho thứ mà mô hình gốc không diễn đạt nổi: cái lỗ còn lại sau khi một vòng
+  kín đã quay về đúng nơi nó bắt đầu.</p>
+  <div class="cta">
+    <a class="btn primary" href="panels/manifold_panel.html">Mở panel 3D</a>
+    <a class="btn" href="panels/geometry_panel.html">Panel hình học</a>
+    <a class="btn" href="panels/regimes_panel.html">Panel chế độ</a>
+    <a class="btn" href="https://github.com/REPO_SLUG">Mã nguồn trên GitHub</a>
+  </div>
+</div></header>
+
+<section><div class="wrap">
+  <h2>Bắt đầu từ các panel</h2>
+  <p class="lede">Ba trang tự chứa. Không phải cài gì, không cần server, không
+  cần build — chúng chạy hoàn toàn trong trình duyệt của bạn.</p>
+  <div class="cards">
+    <div class="card">
+      <h3>manifold_panel</h3>
+      <p>Sáu tấm trong không gian 3D. Cả 78 biến dưới dạng slider nhóm theo tấm,
+      một con dao bạn mở đóng được, và một công tắc chuyển giữa hai mô hình trí
+      nhớ. Bắn hai cú sốc theo hai thứ tự rồi xem có vết sẹo nào không.</p>
+      <a class="go" href="panels/manifold_panel.html">mở →</a>
+    </div>
+    <div class="card">
+      <h3>geometry_panel</h3>
+      <p>Cùng 78 biến đó, xếp theo <strong>vai hình học</strong> thay vì theo
+      việc chúng là hệ số của phương trình nào: vị trí, tiếp tuyến, độ cong,
+      biên độ.</p>
+      <a class="go" href="panels/geometry_panel.html">mở →</a>
+    </div>
+    <div class="card">
+      <h3>regimes_panel</h3>
+      <p>Điều khiển trực tiếp sáu tầng và xem phân rã ba khối phản ứng. Mười một
+      kịch bản có sẵn, năm trong số đó là nghiên cứu tình huống lịch sử.</p>
+      <a class="go" href="panels/regimes_panel.html">mở →</a>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Kết quả đáng tranh luận</h2>
+  <p class="lede">Ba đại lượng mà cả ba bằng <em>đúng</em> 0 trong mô hình gốc —
+  không phải nhỏ, mà là 0, và 0 vì một lý do cấu trúc.</p>
+  <div class="tscroll"><table>
+    <tr><th></th><th>τ ≡ 0</th><th>trễ · τ = 0,294</th><th>mỏi · τ = 0,122</th></tr>
+    <tr><td>giao hoán tử ‖[L₄, L₅]‖</td><td class="num zero">0,000e+00</td><td class="num zero">0,000e+00</td><td class="num">1,720e-02</td></tr>
+    <tr><td>holonomy H(γ)</td><td class="num zero">+0,000e+00</td><td class="num">−7,318e-02</td><td class="num">−4,056e-02</td></tr>
+    <tr><td>dư âm sau khi gỡ sốc</td><td class="num zero">+0,000000</td><td class="num">+0,027931</td><td class="num">+0,011078</td></tr>
+  </table></div>
+  <p>Tầng E9 của mô hình gốc là một hàm của trạng thái hiện tại và không mang
+  theo lịch sử nào, nên hai đường đi tới cùng một trạng thái
+  <strong>bắt buộc</strong> cho cùng một đầu ra. Nó không thiếu một số hạng — nó
+  nằm trong một <em>lớp hàm</em> không thể diễn đạt nổi "cái lỗ còn lại".</p>
+  <p>Điều đó biến thành một câu hỏi thực nghiệm, và câu này không cần đợt dữ
+  liệu dài:</p>
+  <blockquote>Thứ tự hai cú sốc có đổi mức thường trực không, khi trạng thái
+  cuối giữ nguyên?<br>Có → mỏi. Không → trễ.</blockquote>
+  <p>Lưu ý giao hoán tử của dạng trễ bằng 0 <em>theo đúng định nghĩa của toán
+  tử</em>: nó lấy cực đại theo lịch sử, và hai thứ tự đi qua cùng tập trạng
+  thái. Holonomy và dư âm thì khác 0 ở cả hai. Vòng kín quay về đúng trạng thái
+  đầu; vết sẹo thì ở lại.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Ba package, ba thứ khác nhau</h2>
+  <p class="lede">Quan hệ giữa chúng mới là phần thú vị.</p>
+  <div class="tscroll"><table>
+    <tr><th>package</th><th>là gì</th><th>có nhập amr?</th></tr>
+    <tr><td class="mono">amr</td><td>mô hình của sách — sáu tầng ở dạng chuẩn, có kiểm tra biên</td><td>—</td></tr>
+    <tr><td class="mono">amr2</td><td>một mô hình <strong>KHÁC</strong>: sửa các lỗi của sách, khớp với dữ liệu FRED thật, có backtest ngoài mẫu</td><td>không, có chủ đích</td></tr>
+    <tr><td class="mono">amr3</td><td><strong>CÙNG</strong> mô hình, đọc lại trong hệ toạ độ hình học: tấm, vết sẹo, phụ thuộc đường đi</td><td>có, chạy nó ở bên trong</td></tr>
+  </table></div>
+  <p><code>amr2</code> đứng riêng vì nó là mô hình đối thủ, phải so sánh được.
+  <code>amr3</code> lồng <code>amr</code> vào trong vì nó là cùng mô hình trong
+  hệ toạ độ khác, và cách chứng minh một lối đọc là trung thực chính là chạy bản
+  gốc ở trong nó:</p>
+  <pre>τ ≡ 0  →  overrides rỗng  →  ln DXY trùng khít amr, chênh lệch 0.000e+00</pre>
+  <p><code>amr3</code> thêm đúng một tham số và <strong>không thêm cạnh
+  nào</strong> — tập cạnh lấy nguyên từ trường <code>gamma</code> trong
+  <code>amr/registry.py</code>.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Tự chạy thử</h2>
+  <p class="lede">Python 3.9+. Không phụ thuộc gì cả — chỉ thư viện chuẩn.</p>
+<pre>git clone https://github.com/REPO_SLUG.git
+cd amr-engine
+python -m amr check            # ràng buộc cấu trúc, kèm độ dư từng cái
+
+python -m amr list             # các kịch bản, kèm điều sách nói về từng cái
+python -m amr run narrative    # một bản đọc định tính đầy đủ
+python -m amr audit            # mọi kịch bản, đối chiếu số liệu sách
+python -m amr2                 # mô hình sách đối đầu mô hình đã sửa
+python -m amr3                 # bản đồ, ba phép đo, quét τ
+
+python tests/test_engine.py    # amr
+python tests/test_amr2.py      # amr2
+python tests/test_amr3.py      # amr3</pre>
+  <p>Cả ba bộ test pass trên Python 3.12, trên Windows, macOS và Linux. Chúng
+  kiểm <strong>cấu trúc</strong>, không chỉ kiểm output:
+  <code>test_atlas_covers_every_amr_variable_exactly_once</code> khẳng định
+  78/78, không thêm không bớt.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Giới hạn, nói thẳng</h2>
+  <div class="note"><strong>Đọc phần này trước khi trích bất kỳ con số nào.</strong>
+  <code>amr</code> là định tính: nó cho ra thang mũi tên và phân rã ba khối,
+  không phải một dự báo điểm đã hiệu chỉnh.</div>
+  <ul>
+    <li><strong>Trên Σ₅ quy tắc độ căng là đúng hệt; trên Σ₁ nó là xấp xỉ</strong>,
+    vì σ_sys là hợp tuyến tính chứ không phải logistic. Code nói ra điều đó thay
+    vì bỏ qua.</li>
+    <li><strong>τ mặc định bằng 0</strong>, và đó là giả thuyết không. Đừng trích
+    một kết quả τ &gt; 0 mà không nêu τ và mô hình trí nhớ.</li>
+    <li><strong>Một khuyết tật dữ liệu được mang theo, không giấu.</strong> CPI
+    tháng 2025-10 không tồn tại — BLS không công bố vì đợt đóng cửa chính phủ
+    bắt đầu 01/10/2025 — nên tháng đó là nội suy và
+    <code>row.cpi_imputed</code> bật True.</li>
+    <li><strong>Khung hình học là một lối đọc, không phải một số chiều.</strong>
+    Mô hình hai tầng mà có vết sẹo thì đã là đâm xuyên; mô hình mười tầng mà
+    không có vết sẹo thì vẫn chỉ là trượt. Bất biến đáng kể là các toán tử tầng
+    có giao hoán hay không.</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Tài liệu</h2>
+  <div class="cards">
+    <div class="card"><h3>Hướng dẫn đầy đủ</h3><p>Từng lệnh và từng khẳng định, được giải thích.</p><a class="go" href="docs/GUIDE.vi.md">đọc →</a></div>
+    <div class="card"><h3>SPEC.md</h3><p>Toàn bộ phần toán.</p><a class="go" href="SPEC.md">đọc →</a></div>
+    <div class="card"><h3>Sổ tay sử dụng</h3><p>Sổ tay amr3, dạng trang web.</p><a class="go" href="docs/huong-dan-su-dung-vi.html">đọc →</a></div>
+    <div class="card"><h3>Bài báo</h3><p>The Architecture of Market Regimes.</p><a class="go" href="docs/The_Architecture_of_Market_Regimes_Model.pdf">PDF →</a></div>
+  </div>
+</div></section>
+
+</div>
+
+<footer><div class="wrap">
+  <div>© 2026 Vi Nhật Sơn · <a href="LICENSE">Apache License 2.0</a></div>
+  <div data-lang="en" class="on">Cite the paper, not the repository — see <a href="CITATION.cff">CITATION.cff</a>.</div>
+  <div data-lang="vi">Hãy trích dẫn bài báo, không phải repo — xem <a href="CITATION.cff">CITATION.cff</a>.</div>
+</div></footer>
+
+<script>
+(function(){
+  var KEY_L="amr.lang", KEY_T="amr.theme";
+  function show(lang){
+    document.querySelectorAll("[data-lang]").forEach(function(el){
+      el.classList.toggle("on", el.getAttribute("data-lang")===lang);
+    });
+    document.documentElement.lang = lang;
+    document.getElementById("b-en").setAttribute("aria-pressed", String(lang==="en"));
+    document.getElementById("b-vi").setAttribute("aria-pressed", String(lang==="vi"));
+    try{ localStorage.setItem(KEY_L, lang); }catch(e){}
+  }
+  var saved=null;
+  try{ saved=localStorage.getItem(KEY_L); }catch(e){}
+  if(!saved){
+    saved=(navigator.language||"").toLowerCase().indexOf("vi")===0 ? "vi" : "en";
+  }
+  show(saved);
+  document.getElementById("b-en").onclick=function(){ show("en"); };
+  document.getElementById("b-vi").onclick=function(){ show("vi"); };
+
+  var tbtn=document.getElementById("b-theme");
+  function applyTheme(t){
+    if(t) document.documentElement.setAttribute("data-theme", t);
+    else  document.documentElement.removeAttribute("data-theme");
+    tbtn.setAttribute("aria-pressed", String(!!t));
+    try{ t ? localStorage.setItem(KEY_T,t) : localStorage.removeItem(KEY_T); }catch(e){}
+  }
+  var st=null;
+  try{ st=localStorage.getItem(KEY_T); }catch(e){}
+  if(st) applyTheme(st);
+  tbtn.onclick=function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    var prefDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if(!cur) applyTheme(prefDark ? "light" : "dark");
+    else if(cur==="dark") applyTheme("light");
+    else applyTheme("dark");
+  };
+})();
+</script>
+</body>
+</html>

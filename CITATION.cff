@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software or the model it implements, please cite the paper."
+title: "AMR Engine — The Architecture of Market Regimes"
+abstract: >-
+  A runnable implementation of "The Architecture of Market Regimes: Modeling DXY
+  through Structural and Reflexive Layers", with a corrected and empirically
+  fitted variant (amr2) and a geometric re-reading that measures path dependence
+  (amr3).
+authors:
+  - family-names: "Vi"
+    given-names: "Nhật Sơn"
+type: software
+license: Apache-2.0
+keywords:
+  - exchange rates
+  - DXY
+  - reflexivity
+  - hysteresis
+  - path dependence
+  - macro-finance
+  - structural modelling
+references:
+  - type: article
+    title: >-
+      The Architecture of Market Regimes: Modeling DXY through Structural and
+      Reflexive Layers
+    authors:
+      - family-names: "Vi"
+        given-names: "Nhật Sơn"
+    year: 2026

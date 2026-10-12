@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đa tạp sáu tấm</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Dụng cụ đo: thanh đỉnh giữ số đọc chính, khung nhìn là đối tượng, cột phải là đầu vào. */
+:root{
+  --bg:#F3F5F3; --panel:#FFFFFF; --inset:#E9EDEA; --fg:#161D1A; --muted:#5B6862;
+  --dim:#89958F;
+  --rule:#E0E5E2; --line:#CDD5D0;
+  --accent:#0D6A58; --tang:#245F9E; --norm:#A33E20; --scar:#74284D;
+  --sheet:#36453F; --on-accent:#FFFFFF;
+  color-scheme:light;
+  --ff:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mo:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:36px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0F0E; --panel:#141917; --inset:#0F1413; --fg:#E7ECE9; --muted:#8A968F;
+  --dim:#5E6A64; --rule:#1F2622; --line:#2C342F;
+  --accent:#3FC2A2; --tang:#63A7E2; --norm:#E2855A; --scar:#CE799F;
+  --sheet:#A3B3AB; --on-accent:#0B0F0E; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0B0F0E; --panel:#141917; --inset:#0F1413; --fg:#E7ECE9; --muted:#8A968F;
+  --dim:#5E6A64; --rule:#1F2622; --line:#2C342F;
+  --accent:#3FC2A2; --tang:#63A7E2; --norm:#E2855A; --scar:#CE799F;
+  --sheet:#A3B3AB; --on-accent:#0B0F0E; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ff);font-weight:400;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums}
+p{margin:0}
+.mo{font-family:var(--mo)}
+
+/* ── thanh đỉnh ────────────────────────────────────────────────────────── */
+.mast{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.mast .in{max-width:1420px;margin:0 auto;padding:10px 20px;
+  display:flex;align-items:baseline;gap:var(--s5);flex-wrap:wrap}
+.mast h1{font-size:1.18rem;font-weight:700;letter-spacing:-.025em;margin:0;
+  white-space:nowrap}
+.mast .rd{display:flex;gap:var(--s5);margin-left:auto;flex-wrap:wrap}
+.mast .rd div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mast .rd k{font-family:var(--mo);font-size:.6rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--dim);display:block}
+.mast .rd b{font-family:var(--mo);font-size:1.02rem;font-weight:500;
+  letter-spacing:-.02em;line-height:1.1}
+
+.wrap{max-width:1420px;margin:0 auto;padding-inline:20px;
+  padding-block:var(--s5) var(--s6);display:flex;flex-direction:column;gap:var(--s5)}
+
+/* ── bố cục ────────────────────────────────────────────────────────────── */
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,344px);gap:var(--s4);
+  align-items:start}
+@media (max-width:1060px){.main{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:var(--s4);min-width:0}
+
+/* ── khung nhìn ────────────────────────────────────────────────────────── */
+.view{position:relative;border:1px solid var(--line);border-radius:2px;
+  overflow:hidden;background:var(--inset);min-width:0}
+#gl{display:block;width:100%;height:clamp(300px,54vh,620px);touch-action:none;
+  cursor:grab}
+#gl.drag{cursor:grabbing}
+.hud{position:absolute;top:var(--s3);left:var(--s3);display:flex;gap:var(--s1);
+  flex-wrap:wrap;pointer-events:none;max-width:calc(100% - 24px)}
+.pill{font-family:var(--mo);font-size:.65rem;padding:3px 7px;border-radius:2px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--rule);color:var(--muted);display:flex;gap:6px}
+.pill b{color:var(--fg);font-weight:500}
+.pill.t{border-color:var(--tang)}.pill.t b{color:var(--tang)}
+.pill.n{border-color:var(--norm)}.pill.n b{color:var(--norm)}
+.pill.s{border-color:var(--scar)}.pill.s b{color:var(--scar)}
+.vh{position:absolute;right:var(--s3);bottom:10px;font-family:var(--mo);
+  font-size:.6rem;color:var(--dim);pointer-events:none;letter-spacing:.04em}
+.key{display:flex;gap:var(--s4);flex-wrap:wrap;font-family:var(--mo);
+  font-size:.64rem;color:var(--muted);padding-inline:2px}
+.key span{display:flex;align-items:center;gap:5px}
+.sw{width:10px;height:10px;border-radius:1px;flex:0 0 auto}
+.sw.dash{height:0;border-top:2px dashed currentColor;border-radius:0;width:13px}
+
+/* ── dàn đo ────────────────────────────────────────────────────────────── */
+.gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(168px,100%),1fr));
+  gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;
+  overflow:hidden}
+.g{background:var(--panel);padding:var(--s3) var(--s4);display:flex;
+  flex-direction:column;gap:2px;min-width:0}
+.g k{font-family:var(--mo);font-size:.62rem;letter-spacing:.09em;color:var(--dim);
+  text-transform:uppercase;display:block}
+.g b{font-family:var(--mo);font-size:1.22rem;font-weight:500;letter-spacing:-.025em;
+  line-height:1.25;word-break:break-all}
+.g[data-z="1"] b{color:var(--dim)}
+.g[data-z="0"] b{color:var(--norm)}
+.g[data-z="x"] b{color:var(--fg)}
+
+/* ── bảng ──────────────────────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(700px,100%),1fr));
+  gap:var(--s4)}
+.card{border:1px solid var(--line);background:var(--panel);border-radius:2px;
+  min-width:0;overflow:hidden}
+.card > h2{font-size:.78rem;font-weight:600;letter-spacing:.02em;margin:0;
+  padding:var(--s3) var(--s4);border-bottom:1px solid var(--rule);
+  display:flex;align-items:baseline;gap:var(--s2)}
+.card > h2 em{font-family:var(--mo);font-style:normal;font-size:.64rem;
+  color:var(--dim);font-weight:400;margin-left:auto;letter-spacing:.04em;
+  text-align:right;min-width:0}
+.scroll{overflow-x:auto;min-width:0}
+table.t{width:100%;border-collapse:collapse;font-family:var(--mo);font-size:.72rem}
+table.t th{text-align:right;font-weight:400;font-size:.6rem;letter-spacing:.06em;
+  color:var(--dim);padding:var(--s2) var(--s3);border-bottom:1px solid var(--rule);
+  white-space:nowrap;vertical-align:bottom;line-height:1.35}
+table.t th:first-child,table.t td:first-child{text-align:left;
+  padding-left:var(--s4);font-family:var(--ff);font-size:.74rem}
+table.t th:last-child,table.t td:last-child{padding-right:var(--s4)}
+table.t th u{display:block;text-decoration:none;color:var(--line);font-size:.58rem;
+  letter-spacing:0}
+table.t td{text-align:right;padding:5px var(--s3);border-bottom:1px solid var(--rule);
+  white-space:nowrap;color:var(--fg)}
+table.t tr:last-child td{border-bottom:0}
+table.t tbody tr:hover td{background:var(--inset)}
+td.k{text-align:left!important;color:var(--muted)}
+td.z{color:var(--dim)}
+td.n{color:var(--norm)} td.g{color:var(--tang)} td.s{color:var(--scar)}
+
+/* thanh đo: phần vào mô hình đặc, phần bị biên chặn gạch chéo */
+.track{display:inline-flex;width:54px;height:7px;background:var(--rule);
+  border-radius:1px;overflow:hidden;vertical-align:middle;margin-left:7px}
+.track i{display:block;height:100%}
+.fill{background:var(--accent)}
+.fill.n{background:var(--norm)} .fill.t{background:var(--tang)}
+.fill.s{background:var(--scar)}
+.cap{background:repeating-linear-gradient(135deg,var(--scar) 0 2px,
+  transparent 2px 4px);opacity:.85}
+
+/* ── cột điền số ───────────────────────────────────────────────────────── */
+.pad{border:1px solid var(--line);background:var(--panel);border-radius:2px;
+  overflow:hidden;display:flex;flex-direction:column;
+  position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);
+  max-height:calc(100vh - env(safe-area-inset-top,0px) - 74px)}
+@media (max-width:1060px){.pad{position:static;max-height:none}}
+.pad > header{padding:var(--s3) var(--s4);border-bottom:1px solid var(--rule);
+  display:flex;flex-direction:column;gap:var(--s2);flex:0 0 auto}
+.pad > header h2{font-size:.78rem;font-weight:600;margin:0}
+.tools{display:flex;gap:var(--s1);flex-wrap:wrap}
+.tools button{font-family:var(--mo);font-size:.66rem;padding:5px 9px;
+  background:transparent;color:var(--muted);border:1px solid var(--line);
+  border-radius:2px;cursor:pointer;letter-spacing:.02em}
+.tools button:hover{border-color:var(--accent);color:var(--accent)}
+.tools button.pri{background:var(--accent);color:var(--on-accent);
+  border-color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg button{flex:1;min-width:0;font-family:var(--mo);font-size:.66rem;padding:6px 4px;
+  background:transparent;color:var(--muted);border:0;border-right:1px solid var(--line);
+  cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+#secs{overflow-y:auto;min-height:0;flex:1 1 auto}
+details.sec{border-bottom:1px solid var(--rule)}
+details.sec:last-child{border-bottom:0}
+details.sec > summary{padding:9px var(--s4);cursor:pointer;display:flex;
+  align-items:baseline;gap:var(--s2);list-style:none;font-size:.8rem;font-weight:500}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary::after{content:"+";font-family:var(--mo);color:var(--dim);
+  flex:0 0 auto;font-size:.8rem}
+details.sec[open] > summary::after{content:"–"}
+details.sec > summary:hover{background:var(--inset)}
+details.sec > summary i{font-family:var(--mo);font-style:normal;font-size:.62rem;
+  color:var(--dim);margin-left:auto;margin-right:var(--s1)}
+.fields{padding:2px var(--s4) var(--s3);display:flex;flex-direction:column;gap:7px}
+
+.f{display:grid;grid-template-columns:1fr 72px;gap:3px var(--s2);align-items:center;
+  min-width:0}
+.f > label{font-family:var(--mo);font-size:.7rem;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
+.f > label i{font-style:normal;color:var(--dim);font-size:.64rem;margin-left:6px}
+.f input[type=number]{font-family:var(--mo);font-size:.7rem;width:100%;
+  padding:3px 5px;background:var(--inset);color:var(--fg);
+  border:1px solid var(--rule);border-radius:2px;text-align:right}
+.f input[type=number]:hover{border-color:var(--line)}
+.f input[type=range]{grid-column:1 / -1;width:100%;accent-color:var(--accent);
+  margin:0;height:14px}
+.f.hand > label{color:var(--scar)}
+.f.hand > label::before{content:"▪";margin-right:5px;font-size:.6rem}
+.f.hand > label i{color:var(--scar);opacity:.7}
+.f.hand input[type=range]{accent-color:var(--scar)}
+.fh{font-family:var(--mo);font-size:.6rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--dim);margin:var(--s2) 0 0}
+input:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+
+.warn{border:1px solid var(--norm);border-left-width:2px;border-radius:2px;
+  background:color-mix(in srgb,var(--norm) 8%,var(--panel));
+  padding:10px var(--s4);font-size:.78rem;display:flex;flex-direction:column;gap:4px}
+.warn k{font-family:var(--mo);font-size:.6rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--norm);display:block}
+footer{border-top:1px solid var(--rule);padding-top:var(--s3);
+  font-family:var(--mo);font-size:.68rem;color:var(--dim);letter-spacing:.04em}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:620px){.pill{white-space:normal}}
+@media (max-width:460px){
+  .wrap{padding-inline:16px;gap:var(--s4)}
+  .mast .in{padding-inline:16px;gap:var(--s3)}
+  .mast .rd{gap:var(--s3)}
+  .f{grid-template-columns:1fr 66px}
+  .gauges{grid-template-columns:1fr}
+  table.t{font-size:.68rem}
+  table.t th,table.t td{padding-inline:var(--s2)}
+}
+</style>
+
+<div class="mast">
+  <div class="in">
+    <h1>Đa tạp sáu tấm</h1>
+    <div class="rd">
+      <div><k>ln DXY</k><b id="hLn">—</b></div>
+      <div><k>Ψ_str</k><b id="hPsi">—</b></div>
+      <div><k>κ_sys</k><b id="hKap">—</b></div>
+      <div><k>Λ(σ)</k><b id="hLam">—</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="main">
+    <div class="col">
+      <div class="view">
+        <canvas id="gl"></canvas>
+        <div class="hud">
+          <span class="pill t">Σ a∥<b id="hTang">—</b></span>
+          <span class="pill n">Σ a⊥<b id="hNorm">—</b></span>
+          <span class="pill s">Σ ξ<b id="hScar">—</b></span>
+        </div>
+        <p class="vh">kéo · lăn</p>
+      </div>
+
+      <div class="key">
+        <span><i class="sw" style="background:var(--tang)"></i>a∥ = (1−τ)·tải</span>
+        <span><i class="sw" style="background:var(--norm)"></i>a⊥ = τ·tải</span>
+        <span><i class="sw" style="background:var(--scar)"></i>ξ</span>
+        <span style="color:var(--line)"><i class="sw dash"></i><em
+          style="font-style:normal;color:var(--muted)">biên [lo, hi]</em></span>
+        <span style="color:var(--scar)"><i class="sw dash"></i><em
+          style="font-style:normal;color:var(--muted)">vị trí trước khi dịch</em></span>
+        <span><i class="sw" style="background:var(--sheet);opacity:.45"></i>mặt tấm</span>
+      </div>
+
+      <div class="gauges">
+        <div class="g" id="gC"><k>‖[L_a, L_b]‖</k><b id="vC">—</b></div>
+        <div class="g" id="gH"><k>H(γ)</k><b id="vH">—</b></div>
+        <div class="g" id="gR"><k>dư âm</k><b id="vR">—</b></div>
+        <div class="g" data-z="x"><k>‖C‖∞ &lt; 4 · E19</k><b id="vCn">—</b></div>
+        <div class="g" data-z="x"><k>η·κ_A·g₁ &lt; 4 · Prop 8.2</k><b id="vCt">—</b></div>
+      </div>
+
+      <div id="warns"></div>
+
+      <div class="grid2">
+        <section class="card">
+          <h2>Sáu tấm<em>Σ₀ … Σ₅ · ⊥</em></h2>
+          <div class="scroll"><table class="t">
+            <thead><tr>
+              <th>tấm</th><th>vị trí<u>trọng số</u></th><th>vùng<u>[lo, hi]</u></th>
+              <th>giá trị</th><th>ξ thô</th><th>đã dịch<u>sau khi kẹp</u></th>
+              <th>cường độ</th><th>độ cong<u>II = 4Λ′</u></th><th>biến</th>
+            </tr></thead>
+            <tbody id="tSheets"></tbody>
+          </table></div>
+        </section>
+
+        <section class="card">
+          <h2>Bảy cạnh liên tấm<em>từ gamma của registry</em></h2>
+          <div class="scroll"><table class="t">
+            <thead><tr>
+              <th>cạnh</th><th>nguồn</th><th>đích<u>trọng số</u></th><th>vai</th>
+              <th>tải</th><th>τ</th><th>a∥<u>(1−τ)·tải</u></th>
+              <th>a⊥<u>τ·tải</u></th><th>vượt<u>(cđ − H*)₊</u></th>
+              <th>độ sâu<u>τ·p·vượt·(1+q·II)</u></th>
+            </tr></thead>
+            <tbody id="tEdges"></tbody>
+          </table></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Mười bảy kênh E9<em>α(σ) = α_tĩnh + (α_căng − α_tĩnh)·Λ(σ)</em></h2>
+        <div class="scroll"><table class="t">
+          <thead><tr>
+            <th>kênh</th><th>bên</th><th>mức</th><th>số mũ<u>α(σ)</u></th>
+            <th>số hạng log</th><th></th><th>bằng chứng</th>
+          </tr></thead>
+          <tbody id="tTerms"></tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="pad">
+        <header>
+          <h2>Điền số</h2>
+          <div class="tools">
+            <button class="pri" id="bBase">Table 10.3</button>
+            <button id="bRand">ngẫu nhiên</button>
+            <button id="bOpen">mở</button>
+            <button id="bShut">đóng</button>
+          </div>
+          <div class="seg" role="group" aria-label="dạng trí nhớ">
+            <button id="mHy" aria-pressed="true">trễ · cực đại</button>
+            <button id="mFa" aria-pressed="false">mỏi · tích phân</button>
+          </div>
+          <p class="key" style="padding:0"><span style="color:var(--scar)">▪<em
+            style="font-style:normal;color:var(--muted)">không có chuỗi quan sát</em></span></p>
+        </header>
+        <div id="secs"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Vi Nhật Sơn</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* engine.js — E3…E9, Layer W, và lớp hình học, chuyển từ Python sang JS.
+ *
+ * Không hằng số nào viết cứng ở đây: tất cả đến từ R (registry xuất ra từ
+ * amr/registry.py và amr/weightlayer.py). Mọi số hạng giữ đúng thứ tự phép
+ * tính của bản Python, vì phép cộng dấu phẩy động không giao hoán và trang
+ * này tự nhận là trùng khít.
+ *
+ * Kiểm: verify.js chạy 40 vector sinh từ chính engine Python.
+ */
+(function (root) {
+"use strict";
+
+const CLIP = 700.0;
+function logistic(z){
+  if (z >= 0){ if (z > CLIP) return 1.0 - 1e-300; const e = Math.exp(-z); return 1/(1+e); }
+  if (z < -CLIP) return 1e-300;
+  const e = Math.exp(z); return e/(1+e);
+}
+function logit(u){ u = Math.min(Math.max(u,1e-12),1-1e-12); return Math.log(u/(1-u)); }
+function dlogistic(z){ const l = logistic(z); return l*(1-l); }
+function clamp(x,lo,hi){ lo = lo===undefined?0:lo; hi = hi===undefined?1:hi;
+  return Math.min(Math.max(x,lo),hi); }
+function safeLog(x){ return Math.log(Math.max(x,1e-300)); }
+function blend(calm,crisis,lam){ return calm + (crisis-calm)*lam; }
+
+/* ── E17 + E18 — hệ trọng số ───────────────────────────────────────────── */
+function solveWeights(R, z, ov, enState, enCoup){
+  const Wd = R.weights, keys = Object.keys(Wd);
+  const ZB = R.zbase;
+  const u0 = {}, base = {}, ell = {};
+  for (const k of keys){
+    const w = Wd[k];
+    let b = (ov && k in ov) ? ov[k] : w.b;
+    b = Math.min(Math.max(b, w.lo + 1e-12), w.hi - 1e-12);
+    base[k] = b;
+    const span = w.hi - w.lo;
+    let u = span > 0 ? (b - w.lo)/span : 0.5;
+    u0[k] = Math.min(Math.max(u,1e-9),1-1e-9);
+    ell[k] = logit(u0[k]);
+  }
+  const sd = {};
+  for (const k of keys){
+    const w = Wd[k]; let d = 0.0;
+    if (enState){
+      for (const m in w.g){
+        const zb = (m in ZB) ? ZB[m] : 0.0;
+        d += w.g[m] * (((m in z) ? z[m] : zb) - zb);
+      }
+      for (const t of w.g2){
+        const m = t[0], n = t[1], g = t[2];
+        const zbm = (m in ZB)?ZB[m]:0.0, zbn = (n in ZB)?ZB[n]:0.0;
+        d += g * ((((m in z)?z[m]:zbm) - zbm) * ((((n in z)?z[n]:zbn)) - zbn));
+      }
+    }
+    sd[k] = d;
+  }
+  const rows = {}; for (const k of keys) rows[k] = [];
+  if (enCoup) for (const t of R.coupling){
+    const k = t[0], j = t[1], c = t[2];
+    if (k in rows && j in u0 && k !== j) rows[k].push([j,c]);
+  }
+  let cnorm = 0.0;
+  for (const k of keys){ let s = 0.0; for (const r of rows[k]) s += Math.abs(r[1]);
+    if (s > cnorm) cnorm = s; }
+
+  let u = Object.assign({}, u0);
+  const drive = {};
+  let converged = false, it = 0;
+  for (it = 1; it <= 500; it++){
+    let delta = 0.0; const nu = {};
+    for (const k of keys){
+      let d = ell[k] + sd[k];
+      for (const r of rows[k]) d += r[1]*(u[r[0]] - u0[r[0]]);
+      drive[k] = d;
+      const val = Math.abs(d - ell[k]) < 1e-15 ? u0[k] : logistic(d);
+      const dd = Math.abs(val - u[k]); if (dd > delta) delta = dd;
+      nu[k] = val;
+    }
+    u = nu;
+    if (delta < 1e-13){ converged = true; break; }
+  }
+  const values = {};
+  for (const k of keys){
+    const w = Wd[k];
+    values[k] = Math.abs(u[k] - u0[k]) < 1e-15 ? base[k] : w.lo + (w.hi - w.lo)*u[k];
+  }
+  return { values, base, position:u, drive, couplingNorm:cnorm,
+           unique: cnorm < 4.0,
+           amplification: cnorm < 4.0 ? 1/(1 - cnorm/4) : Infinity,
+           iterations: it, converged };
+}
+
+/* ── E3 — σ_sys ───────────────────────────────────────────────────────── */
+function sigmaSys(R, s, wS, wX, wF, wH){
+  const O = R.opt;
+  const market = 0.5*(s.p_vix + s.p_bondvol);
+  const base = wS*market + wX*s.p_gpr + wH*s.p_health;
+  const friction = 1.0 + wF*s.p_stlfsi;
+  const composite = base*friction;
+  const total = Math.max(base,1e-12);
+  const z = (composite - O.c_bar)/Math.max(O.s_c,1e-9);
+  const zFund = (s.p_stlfsi - 0.5)*4.0, zGen = (market - 0.5)*4.0;
+  return { sigma:clamp(logistic(z)), composite,
+           marketShare: wS*market/total, newsShare: wX*s.p_gpr/total,
+           healthShare: wH*s.p_health/total, frictionMult: friction,
+           sigmaFund: clamp(logistic(zFund)), sigmaGen: clamp(logistic(zGen)) };
+}
+
+/* ── E4 / E5 — Φ_sys, s_US ────────────────────────────────────────────── */
+function phiSys(G,RU,M,T,p0,pG,pR,pM,pT){ return p0 + pG*G - pR*RU + pM*M - pT*T; }
+function sUsSys(G,RU,E,T,g0,gG,gR,gE,gT){
+  return logistic(g0 + gG*G - gR*RU - gE*E - gT*T);
+}
+
+/* ── E11–E13 — M_shock ────────────────────────────────────────────────── */
+function mShock(R, lamF){
+  const O = R.opt; let tot = 0.0;
+  for (const c of R.omega){
+    const age = O.t_now - c[0];
+    if (age < 0) continue;
+    const rho = Math.max(0.0, 1.0 - age/O.T_career);
+    tot += c[1]*Math.exp(-lamF*age)*rho;
+  }
+  return clamp(tot/Math.max(O.mnorm,1e-9));
+}
+
+/* ── E6 — κ_sys ───────────────────────────────────────────────────────── */
+function kappaSys(kb,V,M,A,sig,RU,H,I,aV,aM,aA,aS,kR,aH,aI){
+  const f = {
+    "κ_base": kb,
+    "(1+a_V·V_USD)": 1+aV*V, "(1+a_M·M_shock)": 1+aM*M,
+    "(1+a_A·A_meta)": 1+aA*A, "(1+a_σ·σ_sys)": 1+aS*sig,
+    "(1−κ_R·R_US)": 1-kR*RU, "(1+a_H·H_soc)": 1+aH*H,
+    "(1+a_I·I_imp)": 1+aI*I };
+  let k = 1.0; for (const key in f) k *= f[key];
+  const kmax = kb*(1+aV)*(1+aM)*(1+aA)*(1+aS)*(1+aH)*(1+aI);
+  return { kappa:k, factors:f, kappaMax:kmax };
+}
+
+/* ── E7 ∘ E7b — điểm bất động Tầng 4, Eq (8.8) ───────────────────────── */
+function psychoFixedPoint(R, L, bF, fHard){
+  const O = R.opt;
+  const kA = L.A_alg*L.C_src*L.P_AI*L.T_exp;
+  const K = L.S_access*L.P_habit*L.E_sys/(1.0 + L.R_fric);
+  let g0 = K*O.cL0, g1 = K*O.cL1;
+  if (g0 + g1 > 1.0){ const sc = 1.0/(g0+g1); g0 *= sc; g1 *= sc; }
+  let H = 0.5, it = 0;
+  for (it = 1; it <= 500; it++){
+    const I = g0 + g1*H;
+    const Hn = logistic(O.eta*(kA*I - L.R_div));
+    if (Math.abs(Hn - H) < 1e-12){ H = Hn; break; }
+    H = Hn;
+  }
+  const I = g0 + g1*H;
+  const contraction = 0.25*O.eta*kA*g1;
+  const Tp = O.eta*kA*dlogistic(O.eta*(kA*I - L.R_div))*g1;
+  const amp = Tp < 1.0 ? 1/(1-Tp) : Infinity;
+  const V = O.v0*H*(1+O.bA*L.A_alg)*(1+O.bP*L.P_AI)*(1+bF*fHard);
+  return { H_soc:clamp(H), I_imp:clamp(I), kappa_A:kA, g0, g1, contraction,
+           unique: contraction < 4.0, amplification:amp, iterations:it,
+           V_meme:V, B_phase:clamp(H*I) };
+}
+
+/* ── E24 / E8 — f_hard, Ψ_str, k_Ψ ───────────────────────────────────── */
+function fHardAgg(Ca,Tf,Au,wC,wT,wCT,wAu){
+  const Cw = (1-wAu)*Ca + wAu*Au;
+  return clamp(wC*Cw + wT*Tf - wCT*Cw*Tf);
+}
+function psiStr(fh,Lmax,th0,kps){ return 1.0 - Lmax*logistic(kps*(fh - th0)); }
+function kPsiFn(R,kb,H,V,I){
+  const c = R.opt.kpsiC, O = R.opt;
+  const num = (1+c[0]*H)*(1+c[1]*V)*(1+c[2]*I);
+  const den = (1+c[0]*O.kpsiH0)*(1+c[1]*O.kpsiV0)*(1+c[2]*O.kpsiI0);
+  return kb*num/Math.max(den,1e-12);
+}
+
+/* ── E9 — lắp toàn bộ, kèm vòng ngoài layers ↔ Layer W ───────────────── */
+function run(R, state, ov, opt){
+  opt = Object.assign({ enState:true, enCoup:true, enHealth:false,
+    enReturn:false, enReversal:false, splitPrec:false, havenFunding:false,
+    recentre:false, regimeLambda:false, susInside:true, reversal:0.0 }, opt||{});
+  const L = state.latents, warn = [];
+  let z = { sigma:0.35, phi:0.5, sus:0.70, hsoc:0.30, iimp:0.30,
+            fhard:0.34, rus:("R_US" in L ? L.R_US : 0.2), psi:0.0 };
+  let wsol=null, sig=null, psy=null, kap=null;
+  let phi=0, sus=0, fh=0, kps=0, ms=0, psi=1.0, Tfrag=0, Soff=0;
+
+  for (let outer = 0; outer < 12; outer++){
+    wsol = solveWeights(R, z, ov, opt.enState, opt.enCoup);
+    const W = wsol.values;
+
+    sig = sigmaSys(R, state.sigmaInputs, W.w_sigma, W.w_X, W.w_F,
+                   opt.enHealth ? W.w_H : 0.0);
+    psy = psychoFixedPoint(R, L, opt.enReturn ? W.b_F : 0.0, z.fhard);
+
+    Tfrag = L.T_frag; Soff = L.S_off;
+    if (opt.enReversal && opt.reversal > 0){
+      const r = W.r_rev*opt.reversal;
+      Tfrag = clamp(Tfrag*(1-r)); Soff = clamp(Soff*(1-r));
+    }
+    fh = fHardAgg(L.C_alt, Tfrag, L.Au_sub, W.w_Calt, W.w_Tfrag, W.w_CT, W.w_gold);
+    kps = kPsiFn(R, W.k_psi, psy.H_soc, psy.V_meme, psy.I_imp);
+    psi = psiStr(fh, W.L_max, W.theta_0, kps);
+
+    phi = phiSys(L.G_pol, L.R_US, L.M_trust, Tfrag, W.phi_0, W.phi_G, W.phi_R,
+                 W.phi_M, W.phi_T);
+    sus = sUsSys(L.G_pol, L.R_US, L.E_inf, Tfrag, W.gam_0, W.gam_G, W.gam_R,
+                 W.gam_E, W.gam_T);
+
+    ms = mShock(R, R.opt.lam_f);
+    kap = kappaSys(W.kappa_base, L.V_USD, ms, L.A_meta, sig.sigma, L.R_US,
+                   psy.H_soc, psy.I_imp, W.a_V, W.a_M, W.a_A, W.a_sigma,
+                   W.kappa_R, W.a_H, W.a_I);
+
+    const zn = { sigma:sig.sigma, phi:clamp(phi/2.0), sus, hsoc:psy.H_soc,
+                 iimp:psy.I_imp, fhard:fh, rus:L.R_US, psi:clamp(1.0-psi) };
+    let mx = 0.0;
+    for (const k in z){ const d = Math.abs(zn[k]-z[k]); if (d > mx) mx = d; }
+    z = zn;
+    if (mx < 1e-11) break;
+    if (outer === 11) warn.push("Vòng ngoài (layers ↔ Layer W) chưa hội tụ sau 12 lượt.");
+  }
+
+  const W = wsol.values;
+  const lam = logistic(W.theta*(sig.sigma - W.sigma_star));
+  const terms = [];
+  let lnBracket = 0.0;
+
+  for (const c of R.demand){
+    const lvl = state.channels[c.k];
+    const a = blend(c.ac, c.ax, lam);
+    const lc = a*safeLog(lvl);
+    lnBracket += lc;
+    terms.push({ k:c.k, s:c.s, side:"D", lvl, exp:a, lc, ev:c.ev });
+  }
+  const aPrec = W.alpha_prec;
+  const precLevel = state.channels[R.prec.k];
+  const precBase = opt.susInside ? sus*precLevel : precLevel;
+  const precExp  = opt.susInside ? aPrec : aPrec*sus;
+  const lcP = precExp*safeLog(precBase);
+  const lcPb = precExp*safeLog(opt.susInside ? sus : 1.0);
+  lnBracket += (lcP - lcPb);
+  terms.push({ k:"prec", s:R.prec.s, side:"D", lvl:precLevel, exp:precExp,
+               lc:lcP - lcPb, ev:R.prec.ev });
+
+  for (const c of R.supply){
+    let lvl = state.channels[c.k];
+    if (c.k === "ext") lvl = lvl*Math.exp(-W.delta_off*Soff);
+    const b = blend(c.ac, c.ax, lam);
+    const lc = -b*safeLog(lvl);
+    lnBracket += lc;
+    terms.push({ k:c.k, s:c.s, side:"S", lvl, exp:b, lc, ev:c.ev });
+  }
+
+  const mechanical = kap.kappa*lnBracket;
+  const sigUse = opt.havenFunding ? sig.sigmaFund : sig.sigma;
+  const l1 = W.lam_1, l2 = W.lam_2;
+  const haven = (l1*sigUse + l2*sigUse*sigUse)*phi;
+  const c0 = safeLog(state.DXY0);
+  const lnDxy = safeLog(psi) + c0 + mechanical + haven;
+
+  if (phi <= 0) warn.push("Φ_sys ≤ 0: số hạng trú ẩn ĐỔI DẤU thay vì co lại (§6.6.5).");
+  if (W.kappa_R >= 1.0) warn.push("κ_R ≥ 1: κ_sys âm, mô hình đảo ngược (Assumption 7.2).");
+  if (!psy.unique) warn.push("η·κ_A·g₁ = " + psy.contraction.toFixed(2)
+    + " ≥ 4: điểm bất động Tầng 4 không duy nhất — tối đa ba cân bằng, cái giữa"
+    + " bất ổn (Proposition 8.3). Kết quả đang đứng trên một nhánh.");
+  if (!wsol.unique) warn.push("‖C‖∞ = " + wsol.couplingNorm.toFixed(2)
+    + " ≥ 4: hệ trọng số không có nghiệm duy nhất (E19).");
+  if (!wsol.converged) warn.push("Hệ trọng số chưa hội tụ trong số vòng lặp cho phép.");
+
+  return { DXY:Math.exp(lnDxy), lnDXY:lnDxy, psi_str:psi, lnBracket, mechanical,
+           haven, c0, sigma:sig, phi, s_us:sus, kappa:kap, psycho:psy,
+           f_hard:fh, k_psi:kps, M_shock:ms, lam, weights:wsol, terms,
+           warnings:warn, T_frag:Tfrag, S_off:Soff };
+}
+
+/* ── lớp hình học — phân rã, độ căng, vết sẹo ────────────────────────── */
+const POS_WEIGHT = { 0:"theta_sub", 1:"sigma_star", 2:"phi_0", 3:"kappa_base",
+                     4:null, 5:"theta_0", 9:null };
+
+function tautness(arg){ return 4.0*dlogistic(arg); }
+
+function newState(R){
+  const lat = {}, ch = {};
+  for (const k in R.latents) lat[k] = R.latents[k].d;
+  for (const c of R.demand) ch[c.k] = 1.0;
+  for (const c of R.supply) ch[c.k] = 1.0;
+  ch[R.prec.k] = 1.0;
+  return { latents:lat, channels:ch, sigmaInputs:Object.assign({}, R.sigin),
+           DXY0:100.0 };
+}
+function copyState(s){
+  return { latents:Object.assign({},s.latents), channels:Object.assign({},s.channels),
+           sigmaInputs:Object.assign({},s.sigmaInputs), DXY0:s.DXY0 };
+}
+
+function Manifold(R, state, cfg){
+  this.R = R;
+  this.state = copyState(state || newState(R));
+  this.cfg = Object.assign({ tau:{}, fragFeedback:false, amr:{}, baseOv:null,
+    memory:"hysteresis", H_star:null, p:null, q:null, rho:null }, cfg||{});
+  this._refKey = null; this._refTaut = null;
+  const P = {}; for (const row of R.params) P[row[0]] = row[2];
+  this.P = { H_star: this.cfg.H_star !== null ? this.cfg.H_star : P.H_star,
+             p: this.cfg.p !== null ? this.cfg.p : P.p_depth,
+             q: this.cfg.q !== null ? this.cfg.q : P.q_taut,
+             rho: this.cfg.rho !== null ? this.cfg.rho : P.rho_frag };
+  this.scar = {0:0,1:0,2:0,3:0,4:0,5:0,9:0};
+  this.Tfrag0 = this.state.latents.T_frag;
+  this.steps = [];
+}
+
+Manifold.prototype.overrides = function (base) {
+  const ov = Object.assign({}, base||{});
+  for (const sh in this.scar){
+    if (this.scar[sh] <= 0) continue;
+    const key = POS_WEIGHT[sh];
+    if (!key) continue;
+    const w = this.R.weights[key];
+    ov[key] = Math.max(Math.max(w.lo, 0.05), w.b - this.scar[sh]);
+  }
+  return ov;
+};
+
+Manifold.prototype.referenceTaut = function (ov, fallback) {
+  let empty = true; for (const k in ov){ empty = false; break; }
+  if (empty) return fallback;
+  const key = JSON.stringify([this.state.latents, this.state.channels,
+                              this.state.sigmaInputs]);
+  if (this._refKey === key) return this._refTaut;
+  const r0 = run(this.R, this.state, null, this.cfg.amr);
+  const Lmax = r0.weights.values.L_max;
+  const kmax = Math.max(1e-9, r0.kappa.kappaMax);
+  const c01 = x => Math.min(1-1e-12, Math.max(1e-12, x));
+  const v = { 0:c01(r0.f_hard), 1:c01(r0.sigma.sigma), 2:c01(r0.phi),
+              3:c01(r0.kappa.kappa/kmax), 4:c01(r0.psycho.H_soc),
+              5:c01((1-r0.psi_str)/Math.max(1e-9,Lmax)), 9:c01(r0.sigma.sigma) };
+  const out = {};
+  for (const k in v) out[k] = tautness(Math.log(v[k]/(1-v[k])));
+  this._refKey = key; this._refTaut = out;
+  return out;
+};
+
+Manifold.prototype.step = function (move, baseOv) {
+  if (baseOv === undefined || baseOv === null) baseOv = this.cfg.baseOv || null;
+  if (move) {
+    const s = copyState(this.state);
+    if (move.latents) for (const k in move.latents) s.latents[k] = move.latents[k];
+    if (move.channels) for (const k in move.channels) s.channels[k] = move.channels[k];
+    if (move.sigmaInputs) for (const k in move.sigmaInputs) s.sigmaInputs[k] = move.sigmaInputs[k];
+    this.state = s;
+    if (move.latents && ("T_frag" in move.latents)) this.Tfrag0 = s.latents.T_frag;
+  }
+  if (this.cfg.fragFeedback)
+    this.state.latents.T_frag = Math.min(1.0, this.Tfrag0 + this.P.rho*this.scar[2]);
+
+  const ov = this.overrides(baseOv);
+  const r = run(this.R, this.state, ov, this.cfg.amr);
+
+  const Lmax = r.weights.values.L_max;
+  const kmax = Math.max(1e-9, r.kappa.kappaMax);
+  const c01 = x => Math.min(1-1e-12, Math.max(1e-12, x));
+  const v = { 0:c01(r.f_hard), 1:c01(r.sigma.sigma), 2:c01(r.phi),
+              3:c01(r.kappa.kappa/kmax), 4:c01(r.psycho.H_soc),
+              5:c01((1-r.psi_str)/Math.max(1e-9,Lmax)), 9:c01(r.sigma.sigma) };
+  const intensity = { 0:v[0], 1:v[1], 2:1-v[2], 3:v[3], 4:v[4], 5:v[5], 9:v[9] };
+  const taut = {};
+  for (const k in v) taut[k] = tautness(Math.log(v[k]/(1-v[k])));
+
+  const HS = {};
+  for (const k in this.R.hstar) HS[k] = +this.R.hstar[k];
+  HS["4"] = this.P.H_star;
+
+  // Độ cong THAM CHIẾU: cùng trạng thái ngoại sinh, KHÔNG có vết sẹo. Không có
+  // bước này thì độ sâu đọc II từ tấm đã bị dịch, tức toán tử ăn đầu ra của
+  // chính nó, và kết quả phụ thuộc cách chia thời gian.
+  const tautRef = this.referenceTaut(ov, taut);
+
+  const dt = (move && typeof move.dt === "number") ? move.dt : 1.0;
+  const hyst = this.cfg.memory !== "fatigue";
+  const decs = [];
+  for (const e of this.R.edges){
+    const src = String(e[0]), dst = String(e[1]);
+    const t = this.cfg.tau[src+">"+dst] || 0.0;
+    const excess = Math.max(0.0, intensity[src] - HS[src]);
+    const tt = tautRef[dst] === undefined ? 0.0 : tautRef[dst];
+    const depth = t*this.P.p*excess*(1.0 + this.P.q*tt);
+    decs.push({ src:+src, dst:+dst, v:e[2], w:e[3], load:e[4], tau:t,
+                tangential:(1-t)*e[4], normal:t*e[4], excess, taut:tt, depth });
+  }
+  const scarSnap = Object.assign({}, this.scar);
+  for (const d of decs){
+    if (d.depth <= 0) continue;
+    if (!POS_WEIGHT[String(d.dst)]) continue;     // Σ₄ không có vị trí (Remark 10.2)
+    const k = String(d.dst);
+    if (hyst){ if (d.depth > this.scar[k]) this.scar[k] = d.depth; }
+    else this.scar[k] += dt*d.depth;
+  }
+
+  const st = { i:this.steps.length, move: move ? move.name : "nền",
+               r, intensity, taut, decs, overrides:ov,
+               scar:scarSnap, scarAfter:Object.assign({},this.scar),
+               T_frag:this.state.latents.T_frag };
+  this.steps.push(st);
+  return st;
+};
+
+function trace(R, moves, state, cfg, settle){
+  const m = new Manifold(R, state, cfg);
+  m.step(null);
+  for (const mv of moves) m.step(mv);
+  if (settle !== false) m.step(null);
+  return m;
+}
+function invertMove(move, state){
+  const o = { name:"gỡ "+move.name, latents:{}, channels:{}, sigmaInputs:{} };
+  if (move.latents) for (const k in move.latents) o.latents[k] = state.latents[k];
+  if (move.channels) for (const k in move.channels) o.channels[k] = state.channels[k];
+  if (move.sigmaInputs) for (const k in move.sigmaInputs) o.sigmaInputs[k] = state.sigmaInputs[k];
+  return o;
+}
+function commutator(R, a, b, state, cfg){
+  const ab = trace(R,[a,b],state,cfg), ba = trace(R,[b,a],state,cfg);
+  const la = ab.steps[ab.steps.length-1].r.lnDXY, lb = ba.steps[ba.steps.length-1].r.lnDXY;
+  return { lnAB:la, lnBA:lb, norm:Math.abs(la-lb), scarAB:ab.scar, scarBA:ba.scar };
+}
+function holonomy(R, loop, state, cfg){
+  const m = new Manifold(R, state, cfg);
+  const base = m.step(null);
+  const s0 = copyState(m.state);
+  const close = { name:"đóng vòng", latents:{}, channels:{}, sigmaInputs:{} };
+  for (const mv of loop){
+    if (mv.latents) for (const k in mv.latents)
+      if (!(k in close.latents)) close.latents[k] = s0.latents[k];
+    if (mv.channels) for (const k in mv.channels)
+      if (!(k in close.channels)) close.channels[k] = s0.channels[k];
+    if (mv.sigmaInputs) for (const k in mv.sigmaInputs)
+      if (!(k in close.sigmaInputs)) close.sigmaInputs[k] = s0.sigmaInputs[k];
+  }
+  for (const mv of loop) m.step(mv);
+  m.step(close); m.step(null);
+  const end = m.steps[m.steps.length-1].r.lnDXY;
+  return { lnStart:base.r.lnDXY, lnEnd:end, value:end - base.r.lnDXY, scar:m.scar };
+}
+function residual(R, move, state, cfg){
+  const m = new Manifold(R, state, cfg);
+  const before = m.step(null);
+  const inv = invertMove(move, m.state);
+  const shocked = m.step(move);
+  m.step(inv);
+  const after = m.step(null);
+  return { lnBefore:before.r.lnDXY, lnShocked:shocked.r.lnDXY, lnAfter:after.r.lnDXY,
+           value: before.r.lnDXY - after.r.lnDXY, scar:m.scar };
+}
+
+root.AMR = { logistic, logit, dlogistic, clamp, safeLog, blend, solveWeights,
+  sigmaSys, phiSys, sUsSys, mShock, kappaSys, psychoFixedPoint, fHardAgg,
+  psiStr, kPsiFn, run, tautness, newState, copyState, Manifold, trace,
+  commutator, holonomy, residual, invertMove, POS_WEIGHT };
+
+})(typeof module !== "undefined" && module.exports ? module.exports : (this.window||this));
+
+window.REG={"demand":[{"k":"trans","s":"D_trans","vi":"Cầu giao dịch (thương mại, hàng hoá)","ac":0.19,"ax":0.22,"ev":"PARTIAL"},{"k":"debt","s":"D_debt","vi":"Cầu trả nợ (hệ Eurodollar)","ac":0.22,"ax":0.62,"ev":"UNTESTED"},{"k":"cap","s":"D_cap","vi":"Cầu tài sản vốn (tăng trưởng, chênh lệch lãi)","ac":0.38,"ax":0.12,"ev":"PARTIAL"},{"k":"res","s":"D_res","vi":"Cầu quản lý dự trữ","ac":0.24,"ax":0.27,"ev":"UNTESTED"},{"k":"hedge","s":"D_hedge","vi":"Cầu phòng hộ (chi phí FX swap)","ac":0.1,"ax":0.3,"ev":"UNTESTED"},{"k":"gamma","s":"D_gamma","vi":"Cầu phái sinh (gamma của dealer)","ac":0.05,"ax":0.25,"ev":"UNTESTED"},{"k":"net","s":"D_net","vi":"Cầu mạng lưới (thanh toán, stablecoin)","ac":0.02,"ax":0.02,"ev":"MEASURED_ZERO"},{"k":"micro","s":"D_micro","vi":"Cầu vi cấu trúc (mùa vụ)","ac":0.02,"ax":0.02,"ev":"UNTESTED"},{"k":"hcap","s":"D_hcap","vi":"Cầu vốn con người và sở hữu trí tuệ","ac":0.06,"ax":0.06,"ev":"UNTESTED"}],"supply":[{"k":"fed","s":"S_Fed","vi":"Hành động của Fed","ac":0.38,"ax":0.18,"ev":"PARTIAL"},{"k":"tsy","s":"S_Tsy","vi":"Hành động của Kho bạc Mỹ","ac":0.14,"ax":0.18,"ev":"UNTESTED"},{"k":"coll","s":"S_coll","vi":"Khả dụng tài sản thế chấp (repo)","ac":0.18,"ax":0.24,"ev":"PARTIAL"},{"k":"bank","s":"S_bank","vi":"Năng lực bảng cân đối ngân hàng","ac":0.18,"ax":0.36,"ev":"UNTESTED"},{"k":"swap","s":"S_swap","vi":"Đường hoán đổi USD của Fed","ac":0.06,"ax":0.28,"ev":"SUPPORTED"},{"k":"ext","s":"S_ext","vi":"Dòng cán cân thanh toán","ac":0.21,"ax":0.18,"ev":"PARTIAL"},{"k":"crypto","s":"S_crypto","vi":"Nguồn cung USD tổng hợp (DeFi)","ac":0.03,"ax":0.03,"ev":"UNTESTED"}],"prec":{"k":"prec","s":"D_prec","vi":"Cầu trú ẩn an toàn (chạy về chất lượng)","ac":0.05,"ax":0.4,"ev":"PARTIAL"},"weights":{"w_sigma":{"s":"w_σ","vi":"Trọng số khối stress thị trường (VIX/MOVE)","b":1.0,"lo":0.0,"hi":3.0,"pv":"BOOK_STATED","ev":"UNTESTED","g":{},"g2":[]},"w_X":{"s":"w_X","vi":"Trọng số cú sốc ngoại sinh (địa chính trị)","b":1.0,"lo":0.0,"hi":2.5,"pv":"BOOK_STATED","ev":"REFUTED","g":{"sigma":-0.4},"g2":[]},"w_F":{"s":"w_F","vi":"Trọng số ma sát thanh khoản liên thị trường","b":1.0,"lo":0.0,"hi":3.0,"pv":"BOOK_STATED","ev":"SUPPORTED","g":{"sigma":0.35},"g2":[]},"w_H":{"s":"w_H","vi":"Trọng số cú sốc phi quân sự (dịch bệnh, hạ tầng)","b":0.5,"lo":0.0,"hi":2.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"phi_0":{"s":"φ_0","vi":"Hệ số chặn của độ tin cậy nơi trú ẩn","b":0.192,"lo":0.0,"hi":1.5,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"phi_G":{"s":"φ_G","vi":"Hệ số sức mạnh địa chính trị","b":0.5,"lo":0.0,"hi":1.5,"pv":"BOOK_STATED","ev":"UNTESTED","g":{},"g2":[["sus","sus",-0.5]]},"phi_R":{"s":"φ_R","vi":"Hệ số rủi ro nội tại nước Mỹ","b":0.4,"lo":0.0,"hi":1.5,"pv":"OPEN","ev":"PARTIAL","g":{"hsoc":0.6},"g2":[]},"phi_M":{"s":"φ_M","vi":"Hệ số niềm tin thể chế","b":0.55,"lo":0.0,"hi":1.5,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"phi_T":{"s":"φ_T","vi":"Hệ số phân mảnh địa chính trị","b":0.35,"lo":0.0,"hi":1.5,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"gam_0":{"s":"γ_0","vi":"Hệ số chặn của logistic thị phần trú ẩn","b":0.7,"lo":-2.0,"hi":3.0,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"gam_G":{"s":"γ_G","vi":"Hệ số G_pol trong thị phần trú ẩn","b":1.0,"lo":0.0,"hi":3.0,"pv":"BOOK_STATED","ev":"UNTESTED","g":{},"g2":[]},"gam_R":{"s":"γ_R","vi":"Hệ số R_US trong thị phần trú ẩn","b":0.8,"lo":0.0,"hi":3.0,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"gam_E":{"s":"γ_E","vi":"Hệ số kỳ vọng lạm phát","b":0.6,"lo":0.0,"hi":3.0,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"gam_T":{"s":"γ_T","vi":"Hệ số phân mảnh trong thị phần trú ẩn","b":0.5,"lo":0.0,"hi":3.0,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"kappa_base":{"s":"κ_base","vi":"Độ lồi nền (đòn bẩy cấu trúc)","b":0.9,"lo":0.1,"hi":2.0,"pv":"BOOK_STATED","ev":"UNIDENTIFIED","g":{},"g2":[]},"a_V":{"s":"a_V","vi":"Hệ số vận tốc truyền sốc","b":0.1,"lo":0.0,"hi":1.5,"pv":"ENGINE_CONVENTION","ev":"UNIDENTIFIED","g":{},"g2":[]},"a_M":{"s":"a_M","vi":"Hệ số ký ức khủng hoảng","b":0.1,"lo":0.0,"hi":1.5,"pv":"ENGINE_CONVENTION","ev":"UNIDENTIFIED","g":{"hsoc":-0.45},"g2":[]},"a_A":{"s":"a_A","vi":"Hệ số siêu phản thân (meta-reflexivity)","b":0.1,"lo":0.0,"hi":1.5,"pv":"ENGINE_CONVENTION","ev":"UNIDENTIFIED","g":{},"g2":[]},"a_sigma":{"s":"a_σ","vi":"Hệ số stress hệ thống trong κ","b":0.6,"lo":0.0,"hi":1.5,"pv":"BOOK_STATED","ev":"UNTESTED","g":{"hsoc":0.5,"iimp":0.3},"g2":[]},"kappa_R":{"s":"κ_R","vi":"Hệ số làm phẳng do rủi ro nội tại Mỹ","b":0.3,"lo":0.0,"hi":0.95,"pv":"BOOK_STATED","ev":"UNIDENTIFIED","g":{},"g2":[]},"a_H":{"s":"a_H","vi":"Hệ số đồng nhất hoá niềm tin","b":0.5,"lo":0.0,"hi":2.0,"pv":"BOOK_STATED","ev":"UNIDENTIFIED","g":{},"g2":[]},"a_I":{"s":"a_I","vi":"Hệ số tức thời của xung hành động","b":0.4,"lo":0.0,"hi":2.0,"pv":"BOOK_STATED","ev":"UNIDENTIFIED","g":{},"g2":[]},"lam_1":{"s":"λ_1","vi":"Hệ số tuyến tính của số hạng trú ẩn","b":0.08,"lo":-0.25,"hi":0.25,"pv":"BOOK_STATED","ev":"REFUTED","g":{"sigma":0.6},"g2":[]},"lam_2":{"s":"λ_2","vi":"Hệ số bậc hai (độ lồi) của số hạng trú ẩn","b":0.15,"lo":0.0,"hi":0.45,"pv":"BOOK_STATED","ev":"PARTIAL","g":{},"g2":[]},"alpha_prec":{"s":"α_prec","vi":"Độ co giãn của cầu trú ẩn","b":0.15,"lo":0.0,"hi":0.6,"pv":"BOOK_STATED","ev":"PARTIAL","g":{"sigma":0.7},"g2":[]},"sigma_star":{"s":"σ*","vi":"Ngưỡng chuyển chế độ dùng chung","b":0.55,"lo":0.05,"hi":0.95,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"theta":{"s":"θ","vi":"Độ dốc chuyển chế độ dùng chung","b":8.0,"lo":1.0,"hi":40.0,"pv":"OPEN","ev":"UNTESTED","g":{},"g2":[]},"L_max":{"s":"L_max","vi":"Mức mất tối đa của tính toàn vẹn cấu trúc","b":0.35,"lo":0.01,"hi":1.0,"pv":"BOOK_STATED","ev":"UNTESTED","g":{},"g2":[]},"theta_0":{"s":"θ_0","vi":"Ngưỡng tích luỹ của các động lực cứng","b":0.5,"lo":0.05,"hi":0.95,"pv":"BOOK_STATED","ev":"UNTESTED","g":{"hsoc":0.0},"g2":[]},"k_psi":{"s":"k_Ψ,base","vi":"Tốc độ xói mòn cấu trúc (giá trị nền)","b":6.0,"lo":0.5,"hi":60.0,"pv":"BOOK_STATED","ev":"UNTESTED","g":{},"g2":[]},"w_Calt":{"s":"w_C","vi":"Trọng số hạ tầng thay thế trong f_hard","b":0.55,"lo":0.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"w_Tfrag":{"s":"w_T","vi":"Trọng số phân mảnh trong f_hard","b":0.45,"lo":0.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"w_CT":{"s":"w_CT","vi":"Hệ số tương tác C_alt × T_frag","b":0.25,"lo":-1.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"w_gold":{"s":"w_Au","vi":"Trọng số thay thế dự trữ bằng vàng trong C_alt","b":0.4,"lo":0.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"delta_off":{"s":"δ_off","vi":"Hệ số suy giảm do trừng phạt","b":0.8,"lo":0.0,"hi":3.0,"pv":"OPEN","ev":"PARTIAL","g":{},"g2":[]},"r_rev":{"s":"r_rev","vi":"Tốc độ đảo chiều cưỡng chế","b":0.0,"lo":0.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"b_F":{"s":"b_F","vi":"Hệ số kích hoạt tự sự từ động lực cứng","b":0.0,"lo":0.0,"hi":2.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"theta_sub":{"s":"Θ_sub","vi":"Ngưỡng sự cố hạ tầng thành sự kiện tiền tệ","b":0.65,"lo":0.05,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]},"w_prec_short":{"s":"w_2y","vi":"Tỉ trọng đầu ngắn của đường cong trú ẩn","b":0.65,"lo":0.0,"hi":1.0,"pv":"ENGINE_CONVENTION","ev":"ADDED","g":{},"g2":[]}},"latents":{"G_pol":{"s":"G_pol","vi":"Sức mạnh địa chính trị","d":0.7,"L":"STRUCTURAL","meas":"Tier 3. No aggregator over three capacities; CS7 and CS10 apply incompatible measurement rules (ISSUES #33)."},"R_US":{"s":"R_US","vi":"Rủi ro nội tại nước Mỹ","d":0.2,"L":"STRUCTURAL","meas":"Latent; scale fixed to [0,1] by ISSUES #26. Protocol OPEN."},"M_trust":{"s":"M_trust","vi":"Niềm tin thể chế","d":0.7,"L":"STRUCTURAL","meas":"Latent. Inflation enters through it (ISSUES #25)."},"T_frag":{"s":"T_frag","vi":"Phân mảnh địa chính trị","d":0.42,"L":"STRUCTURAL","meas":"Substitute only: BIS triennial FX turnover. ~180 free SWIFT PDFs would close it."},"E_inf":{"s":"E_inf","vi":"Kỳ vọng lạm phát","d":0.3,"L":"STRUCTURAL","meas":"Observable: T5YIFR, MICH."},"H_cap":{"s":"H_cap","vi":"Tồn kho vốn con người và IP","d":0.75,"L":"STRUCTURAL","meas":"Latent stock; h(H_cap) maps it to the D_hcap flow (ISSUES #24)."},"C_alt":{"s":"C_alt","vi":"Hạ tầng thanh toán thay thế","d":0.32,"L":"SECULAR","meas":"Must be built, and built wider than the original defines it (§17.8 item three)."},"V_USD":{"s":"V_USD","vi":"Vận tốc truyền sốc","d":0.6,"L":"REFLEXIVE","meas":"Constructible from GDELT; the better measure needs intraday data."},"M_shock":{"s":"M_shock","vi":"Ký ức khủng hoảng","d":0.45,"L":"REFLEXIVE","meas":"Computed from E11–E14 given the crisis set Ω."},"A_meta":{"s":"A_meta","vi":"Siêu phản thân","d":0.4,"L":"REFLEXIVE","meas":"Latent; no series."},"A_alg":{"s":"A_alg","vi":"Cường độ khuếch đại thuật toán","d":0.6,"L":"PSYCHO","meas":"One of nine Layer-4 variables with zero series."},"C_src":{"s":"C_src","vi":"Tập trung nguồn nội dung","d":0.65,"L":"PSYCHO","meas":"Constructible."},"P_AI":{"s":"P_AI","vi":"Mức thâm nhập của AI tạo sinh","d":0.55,"L":"PSYCHO","meas":"No series."},"T_exp":{"s":"T_exp","vi":"Chỉ số thời lượng phơi nhiễm","d":0.7,"L":"PSYCHO","meas":"No series."},"R_div":{"s":"R_div","vi":"Sức kháng đa dạng còn lại","d":0.3275,"L":"PSYCHO","meas":"No series. The defensive variable of the layer. This value, with the c_L0 and c_L1 of Options, is what makes Table 10.3's stated baseline H_soc = I_imp = 0.30 an actual fixed point of Equation (8.8) rather than an imposed pair — see layers.implied_layer4."},"S_access":{"s":"S_access","vi":"Tốc độ tiếp cận (nghĩ → bấm)","d":0.8,"L":"PSYCHO","meas":"No series."},"R_fric":{"s":"R_fric","vi":"Ma sát kháng cự (nghi ngờ, xác nhận)","d":0.4,"L":"PSYCHO","meas":"No series."},"P_habit":{"s":"P_habit","vi":"Cường độ thói quen được lập trình","d":0.65,"L":"PSYCHO","meas":"No series."},"E_sys":{"s":"E_sys","vi":"Mức gắn kết hệ sinh thái","d":0.7,"L":"PSYCHO","meas":"No series."},"S_off":{"s":"S_off","vi":"Cường độ trừng phạt / phong toả tài sản","d":0.15,"L":"MECHANICAL","meas":"No series; frozen-reserve estimates, OFAC."},"Au_sub":{"s":"Au_sub","vi":"Thay thế dự trữ bằng vàng (ADDED)","d":0.38,"L":"SECULAR","meas":"ADDED. World Bank gold price and reserves incl./excl. gold; both free, both held."},"X_health":{"s":"X_health","vi":"Cú sốc ngoại sinh phi quân sự (ADDED)","d":0.0,"L":"STATE","meas":"ADDED. The X_pand proxy (GPRD) covers war and terrorism only."}},"coupling":[["a_sigma","a_H",0.45],["a_H","a_sigma",0.3],["a_H","a_I",0.4],["a_I","a_H",0.4],["a_M","a_H",-0.55],["lam_2","a_sigma",0.35],["phi_R","kappa_R",-0.35],["kappa_R","phi_R",-0.35],["phi_G","gam_G",0.3],["gam_G","phi_G",0.3],["w_F","w_X",-0.4],["w_X","w_F",-0.4],["k_psi","a_H",0.5],["L_max","theta_0",-0.3],["theta_0","L_max",-0.3],["alpha_prec","lam_1",-0.25],["lam_1","alpha_prec",-0.25]],"zbase":{"sigma":0.35,"phi":0.35,"sus":0.7,"hsoc":0.3,"iimp":0.3,"fhard":0.34,"rus":0.2,"psi":0.0969},"omega":[[2008.75,10.0],[2001.7,6.0]],"opt":{"t_now":2026.75,"lam_f":0.08,"eta":3.0,"cL0":0.8,"cL1":1.18,"c_bar":1.3,"s_c":0.55,"T_career":25.0,"mnorm":13.0,"kpsiC":[2.2,1.0,0.8],"kpsiV0":0.23617,"kpsiH0":0.3,"kpsiI0":0.3,"v0":0.4,"bA":0.8,"bP":0.6},"sigin":{"p_vix":0.42,"p_bondvol":0.42,"p_gpr":0.3,"p_stlfsi":0.33,"p_health":0.0},"atlas":{"w_sigma":{"sh":1,"role":"biên độ","note":"thang chung của σ_sys","p":[]},"w_X":{"sh":1,"role":"tiếp tuyến","note":"tải trọng ngoại sinh","p":[]},"w_F":{"sh":1,"role":"tiếp tuyến","note":"tải trọng tài chính","p":[]},"w_H":{"sh":1,"role":"tiếp tuyến","note":"tải trọng sức khoẻ, ADDED","p":[]},"phi_0":{"sh":2,"role":"vị trí","note":"chặn của Φ_sys","p":[]},"phi_G":{"sh":2,"role":"tiếp tuyến","note":"năng lực chính quyền","p":[]},"phi_R":{"sh":2,"role":"tiếp tuyến","note":"tính bền của chế độ — và nó MANG cạnh 4→2","p":[[4,"hsoc",0.6]]},"phi_M":{"sh":2,"role":"tiếp tuyến","note":"lòng tin tiền tệ","p":[]},"phi_T":{"sh":2,"role":"tiếp tuyến","note":"phân mảnh","p":[]},"gam_0":{"sh":2,"role":"vị trí","note":"chặn của s_US","p":[]},"gam_G":{"sh":2,"role":"tiếp tuyến","note":"G_pol vào s_US","p":[]},"gam_R":{"sh":2,"role":"tiếp tuyến","note":"R_US vào s_US","p":[]},"gam_E":{"sh":2,"role":"tiếp tuyến","note":"E_inf vào s_US","p":[]},"gam_T":{"sh":2,"role":"tiếp tuyến","note":"T_frag vào s_US","p":[]},"kappa_base":{"sh":3,"role":"vị trí","note":"VỊ TRÍ tấm Σ₃. Prop. 11.1: không nhận dạng được — nên đây là vị trí tấm mà chưa ai đo được","p":[]},"a_V":{"sh":3,"role":"tiếp tuyến","note":"V_USD vào κ","p":[]},"a_M":{"sh":3,"role":"tiếp tuyến","note":"M_shock vào κ — MANG cạnh 4→3","p":[[4,"hsoc",-0.45]]},"a_A":{"sh":3,"role":"tiếp tuyến","note":"A_meta vào κ","p":[]},"a_sigma":{"sh":3,"role":"tiếp tuyến","note":"σ vào κ — MANG cạnh 4→3","p":[[4,"hsoc",0.5],[4,"iimp",0.3]]},"kappa_R":{"sh":3,"role":"độ cong","note":"độ hồi quy của κ","p":[]},"a_H":{"sh":3,"role":"tiếp tuyến","note":"H_soc vào κ","p":[]},"a_I":{"sh":3,"role":"tiếp tuyến","note":"I_imp vào κ","p":[]},"lam_1":{"sh":9,"role":"tiếp tuyến","note":"bậc nhất theo σ","p":[[1,"sigma",0.6]]},"lam_2":{"sh":9,"role":"độ cong","note":"bậc hai theo σ — I37","p":[]},"alpha_prec":{"sh":9,"role":"tiếp tuyến","note":"số mũ phòng ngừa","p":[[1,"sigma",0.7]]},"sigma_star":{"sh":1,"role":"vị trí","note":"NGƯỠNG chuyển chế độ — vị trí tấm Σ₁, và là vị trí duy nhất Λ(σ) biết tới","p":[]},"theta":{"sh":1,"role":"độ cong","note":"độ dốc Λ. Λ′ ≤ ¼ nên θ cũng chính là độ CĂNG tối đa","p":[]},"L_max":{"sh":5,"role":"biên độ","note":"độ sâu xói mòn tối đa","p":[]},"theta_0":{"sh":5,"role":"vị trí","note":"NGƯỠNG tích luỹ động lực cứng, và là trọng số VỊ TRÍ của Σ₅. Assumption 9.2 giữ nó cố định trước tầng Σ₄; §9.8 gọi đó là chỗ hệ quả lớn nhất chương theo bản gốc. Tải trọng Σ₄→Σ₅ là chỗ rời đi, và nó bằng 0 theo mặc định.","p":[[4,"hsoc",0.0]]},"k_psi":{"sh":5,"role":"độ cong","note":"tốc độ xói mòn nền","p":[]},"w_Calt":{"sh":5,"role":"tiếp tuyến","note":"C_alt vào f_hard","p":[]},"w_Tfrag":{"sh":5,"role":"tiếp tuyến","note":"T_frag vào f_hard","p":[]},"w_CT":{"sh":5,"role":"độ cong","note":"tương tác C_alt × T_frag","p":[]},"w_gold":{"sh":5,"role":"tiếp tuyến","note":"Au_sub vào f_hard, ADDED","p":[]},"delta_off":{"sh":2,"role":"biên độ","note":"biên độ S_off, E9","p":[]},"r_rev":{"sh":3,"role":"độ cong","note":"đảo chiều, ADDED, nền 0","p":[]},"b_F":{"sh":5,"role":"tiếp tuyến","note":"đường về 5→4, ISSUES #32, bị từ chối, nền 0","p":[]},"theta_sub":{"sh":0,"role":"vị trí","note":"hạ tầng số, ADDED","p":[]},"w_prec_short":{"sh":9,"role":"tiếp tuyến","note":"đầu ngắn của đường cong, ADDED","p":[]},"G_pol":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"R_US":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"M_trust":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"T_frag":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"E_inf":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"H_cap":{"sh":2,"role":"giá mang","note":"biến ẩn Tầng 2","p":[]},"C_alt":{"sh":5,"role":"giá mang","note":"biến ẩn Tầng 5","p":[]},"V_USD":{"sh":3,"role":"giá mang","note":"biến ẩn Tầng 3","p":[]},"M_shock":{"sh":3,"role":"giá mang","note":"biến ẩn Tầng 3","p":[]},"A_meta":{"sh":3,"role":"giá mang","note":"biến ẩn Tầng 3","p":[]},"A_alg":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"C_src":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"P_AI":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"T_exp":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"R_div":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"S_access":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"R_fric":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"P_habit":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"E_sys":{"sh":4,"role":"giá mang","note":"biến ẩn Tầng 4","p":[]},"S_off":{"sh":0,"role":"giá mang","note":"biến ẩn Tầng 0","p":[]},"Au_sub":{"sh":5,"role":"giá mang","note":"biến ẩn Tầng 5","p":[]},"X_health":{"sh":1,"role":"giá mang","note":"biến ẩn Tầng 1","p":[]},"trans":{"sh":0,"role":"giá mang","note":"kênh D D_trans","p":[]},"debt":{"sh":0,"role":"giá mang","note":"kênh D D_debt","p":[]},"cap":{"sh":0,"role":"giá mang","note":"kênh D D_cap","p":[]},"res":{"sh":0,"role":"giá mang","note":"kênh D D_res","p":[]},"hedge":{"sh":0,"role":"giá mang","note":"kênh D D_hedge","p":[]},"gamma":{"sh":0,"role":"giá mang","note":"kênh D D_gamma","p":[]},"net":{"sh":0,"role":"giá mang","note":"kênh D D_net","p":[]},"micro":{"sh":0,"role":"giá mang","note":"kênh D D_micro","p":[]},"hcap":{"sh":0,"role":"giá mang","note":"kênh D D_hcap","p":[]},"fed":{"sh":0,"role":"giá mang","note":"kênh S S_Fed","p":[]},"tsy":{"sh":0,"role":"giá mang","note":"kênh S S_Tsy","p":[]},"coll":{"sh":0,"role":"giá mang","note":"kênh S S_coll","p":[]},"bank":{"sh":0,"role":"giá mang","note":"kênh S S_bank","p":[]},"swap":{"sh":0,"role":"giá mang","note":"kênh S S_swap","p":[]},"ext":{"sh":0,"role":"giá mang","note":"kênh S S_ext","p":[]},"crypto":{"sh":0,"role":"giá mang","note":"kênh S S_crypto","p":[]},"prec":{"sh":9,"role":"giá mang","note":"kênh D D_prec","p":[]}},"edges":[[1,9,"sigma","alpha_prec",0.7],[1,9,"sigma","lam_1",0.6],[4,2,"hsoc","phi_R",0.6],[4,3,"hsoc","a_M",-0.45],[4,3,"hsoc","a_sigma",0.5],[4,3,"iimp","a_sigma",0.3],[4,5,"hsoc","theta_0",0.0]],"hstar":{"0":0.6,"1":0.6,"2":0.5,"3":0.6,"4":0.45,"5":0.5,"9":0.99},"params":[["tau","τ",0.0,0.0,0.294,"OPEN","PARTIAL","chặn trên suy từ phần thường trực 36 tháng chưa giải thích, và PHỤ THUỘC DẠNG TRÍ NHỚ: 0,294 ở dạng trễ, 0,122 ở dạng mỏi. Chưa nhận dạng được điểm. Nền 0,0 vì đó là amr, và là giả thuyết không."],["H_star","H*",0.45,0.3,0.7,"ENGINE_CONVENTION","UNTESTED","ngưỡng trên cường độ tấm nguồn; dưới nó mọi tác động là tiếp tuyến dù τ bằng bao nhiêu. TÔI ĐẶT. H_soc không có chuỗi quan sát nào nên ngưỡng này chưa ước lượng được — chỉ nêu bằng số để bác bỏ được."],["p_depth","p",0.35,0.0,1.0,"ENGINE_CONVENTION","UNTESTED","độ sâu mỗi đơn vị vượt ngưỡng. TÔI ĐẶT."],["q_taut","q",2.5,0.0,5.0,"ENGINE_CONVENTION","UNTESTED","hệ số độ cong: tấm đích cong hơn thì thành phần vuông góc vào sâu hơn bấy nhiêu lần. TÔI ĐẶT. Dạng của số hạng thì không — II = 4Λ′ lấy từ chính biên Λ′ ≤ ¼ của Proposition 8.2 và của E19."],["rho_frag","ρ",0.5,0.0,1.0,"ENGINE_CONVENTION","UNTESTED","vết sẹo cấu trúc đẩy T_frag lên bao nhiêu. TÔI ĐẶT."]],"ceiling":0.294,"ceilings":{"hysteresis":0.294,"fatigue":0.122},"hand":{"2":[["G_pol","chỉ có biến thay thế"],["H_cap","biến ẩn, quy trình đo còn mở"],["M_trust","biến ẩn, quy trình đo còn mở"],["R_US","biến ẩn, quy trình đo còn mở"],["T_frag","chỉ có biến thay thế"]],"5":[["C_alt","dựng được, chưa dựng"]],"3":[["A_meta","không có chuỗi"],["V_USD","dựng được, chưa dựng"]],"4":[["A_alg","không có chuỗi"],["C_src","dựng được, chưa dựng"],["E_sys","không có chuỗi"],["P_AI","không có chuỗi"],["P_habit","không có chuỗi"],["R_div","không có chuỗi"],["R_fric","không có chuỗi"],["S_access","không có chuỗi"],["T_exp","không có chuỗi"]],"0":[["S_off","không có chuỗi"]],"1":[["X_health","chỉ có biến thay thế"]]}};
+</script>
+<script>
+(function(){
+"use strict";
+const A = window.AMR, R = window.REG;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const hx  = n => new THREE.Color(css(n) || "#888");
+
+/* ── số ───────────────────────────────────────────────────────────────── */
+const dc = (v,n) => (v===undefined||v===null||!isFinite(v)) ? "—"
+  : v.toFixed(n===undefined?3:n).replace(".",",");
+function sci(v,sign){
+  if (!isFinite(v)) return "∞";
+  if (Math.abs(v) < 1e-15) return (sign?"+":"")+"0,000e+0";
+  const [m,e] = v.toExponential(3).split("e");
+  return (sign && v>0 ? "+" : "") + m.replace(".",",")
+    + "e" + (+e>=0?"+":"-") + Math.abs(+e);
+}
+const SUB = {0:"₀",1:"₁",2:"₂",3:"₃",4:"₄",5:"₅",9:"⊥"};
+const SHN = {0:"Σ₀ cơ học",1:"Σ₁ trạng thái",2:"Σ₂ cấu trúc",3:"Σ₃ phản thân",
+  4:"Σ₄ tâm lý-kỹ thuật",5:"Σ₅ thế kỷ",9:"⊥ trú ẩn"};
+const SHORD = [0,1,2,3,4,5,9];
+
+/* ── ô tự điền: tra từ R.hand ─────────────────────────────────────────── */
+const HAND = {};
+for (const sh in R.hand) for (const row of R.hand[sh]) HAND[row[0]] = row[1];
+
+/* ── phân loại khoá ───────────────────────────────────────────────────── */
+const CHKEYS = {};
+R.demand.forEach(c => CHKEYS[c.k] = c);
+R.supply.forEach(c => CHKEYS[c.k] = c);
+CHKEYS[R.prec.k] = R.prec;
+const SIGK = [["p_vix","p_VIX"],["p_bondvol","p_bondvol"],["p_gpr","p_GPRD"],
+  ["p_stlfsi","p_STLFSI"],["p_health","p_health"]];
+const kindOf = k => (k in R.weights) ? "w" : ((k in R.latents) ? "l"
+  : ((k in CHKEYS) ? "c" : null));
+
+/* ── trạng thái trang ─────────────────────────────────────────────────── */
+const P0 = {}; R.params.forEach(r => P0[r[0]] = r[2]);
+const S = { st:A.newState(R), ov:{}, tau:{}, geo:{}, A:{}, B:{},
+            memory:"hysteresis", dt:1.0 };
+function reset(){
+  S.st = A.newState(R);
+  S.ov = {};
+  S.tau = {};
+  for (const e of R.edges) S.tau[e[0]+">"+e[1]] = 0.0;
+  S.geo = { H_star:P0.H_star, p:P0.p_depth, q:P0.q_taut, rho:P0.rho_frag };
+  S.memory = "hysteresis"; S.dt = 1.0;
+  S.A = {}; S.B = {};
+  ["A_alg","C_src","P_AI","T_exp","S_access","P_habit","E_sys","A_meta"]
+    .forEach(k => S.A[k] = 0.90);
+  S.A.R_div = 0.10;
+  S.B = { C_alt:0.62, T_frag:0.70, Au_sub:0.60 };
+}
+reset();
+
+/* ── xây bảng điền số ─────────────────────────────────────────────────── */
+function row(key, label, get, set, lo, hi, step, hand, sym){
+  const f = document.createElement("div");
+  f.className = "f" + (hand ? " hand" : "");
+  const id = "i_" + key.replace(/[^\w]/g,"_");
+  f.innerHTML = '<label for="'+id+'">'+(sym||key)
+    + (label ? '<i>'+label+'</i>' : '') + '</label>'
+    + '<input type="number" id="'+id+'" step="'+step+'" min="'+lo+'" max="'+hi+'">'
+    + '<input type="range" id="'+id+'_r" min="'+lo+'" max="'+hi+'" step="'+step+'" '
+    + 'aria-label="'+(sym||key)+'">';
+  const num = f.querySelector("input[type=number]"), rng = f.querySelector("input[type=range]");
+  const sync = () => { const v = get(); num.value = v; rng.value = v; };
+  const push = v => {
+    v = parseFloat(v); if (!isFinite(v)) return;
+    set(Math.min(Math.max(v,lo),hi)); sync(); schedule();
+  };
+  num.addEventListener("change", () => push(num.value));
+  rng.addEventListener("input", () => push(rng.value));
+  f.__sync = sync; sync();
+  return f;
+}
+
+const SECS = [];
+function section(title, count, open){
+  const d = document.createElement("details");
+  d.className = "sec"; if (open) d.open = true;
+  d.innerHTML = '<summary>'+title+'<i>'+count+'</i></summary>';
+  const box = document.createElement("div");
+  box.className = "fields"; d.appendChild(box);
+  document.getElementById("secs").appendChild(d);
+  SECS.push(d);
+  return box;
+}
+
+function buildInputs(){
+  document.getElementById("secs").innerHTML = ""; SECS.length = 0;
+
+  for (const sh of SHORD){
+    const lat = [], wgt = [];
+    for (const k in R.atlas){
+      const a = R.atlas[k];
+      if (a.sh !== sh) continue;
+      const kd = kindOf(k);
+      if (kd === "w") wgt.push(k); else lat.push(k);
+    }
+    lat.sort(); wgt.sort();
+    const extra = (sh === 1) ? SIGK.length : 0;
+    const n = lat.length + wgt.length + extra;
+    if (!n) continue;
+    const box = section(SHN[sh], n + " biến", sh === 4 || sh === 5);
+
+    if (sh === 1) for (const [k,lbl] of SIGK)
+      box.appendChild(row("sg_"+k, lbl, () => S.st.sigmaInputs[k],
+        v => S.st.sigmaInputs[k] = v, 0, 1, 0.01, false, lbl));
+
+    for (const k of lat){
+      const kd = kindOf(k);
+      if (kd === "l"){
+        const L = R.latents[k];
+        box.appendChild(row(k, L.vi, () => S.st.latents[k],
+          v => S.st.latents[k] = v, 0, 1, 0.01, k in HAND, L.s));
+      } else if (kd === "c"){
+        const c = CHKEYS[k];
+        box.appendChild(row(k, c.vi, () => S.st.channels[k],
+          v => S.st.channels[k] = v, 0.3, 3.0, 0.01, false, c.s));
+      }
+    }
+    for (const k of wgt){
+      const w = R.weights[k];
+      box.appendChild(row(k, w.vi, () => (k in S.ov) ? S.ov[k] : w.b,
+        v => S.ov[k] = v, w.lo, w.hi, (w.hi-w.lo)/200, false, w.s));
+    }
+  }
+
+  const tb = section("số hoành τ trên bảy cạnh", R.edges.length + " cạnh", true);
+  for (const e of R.edges){
+    const key = e[0]+">"+e[1];
+    tb.appendChild(row("tau_"+key, "qua "+e[3], () => S.tau[key],
+      v => S.tau[key] = v, 0, 1, 0.002, false,
+      "τ Σ"+SUB[e[0]]+"→Σ"+SUB[e[1]]));
+  }
+
+  const gb = section("bốn hằng số hình học", "4", false);
+  const GM = [["H_star","H*","ngưỡng trên cường độ Σ₄"],
+    ["p","p","độ sâu mỗi đơn vị vượt ngưỡng"],
+    ["q","q","hệ số độ cong"],["rho","ρ","vết dịch Σ₂ → T_frag"]];
+  const PK = { H_star:"H_star", p:"p_depth", q:"q_taut", rho:"rho_frag" };
+  for (const [k,sym,lbl] of GM){
+    const pr = R.params.find(r => r[0] === PK[k]);
+    gb.appendChild(row("geo_"+k, lbl, () => S.geo[k], v => S.geo[k] = v,
+      pr[3], pr[4], (pr[4]-pr[3])/200, true, sym));
+  }
+
+  const pb = section("hai nhiễu để đo ba đại lượng",
+    Object.keys(S.A).length + " + " + Object.keys(S.B).length, false);
+  const hd = t => { const h = document.createElement("p");
+    h.className = "fh"; h.textContent = t; pb.appendChild(h); };
+  hd("nhiễu a — các giá mang Σ₄");
+  for (const k of Object.keys(S.A))
+    pb.appendChild(row("A_"+k, R.latents[k].vi, () => S.A[k],
+      v => S.A[k] = v, 0, 1, 0.01, false, R.latents[k].s));
+  hd("thời lượng nhiễu a, tính bằng kỳ · chỉ có nghĩa ở dạng mỏi");
+  pb.appendChild(row("dt", "tổng thời lượng trên ngưỡng", () => S.dt,
+    v => S.dt = v, 0.25, 32, 0.25, false, "dt"));
+  hd("nhiễu b — các giá mang Σ₅");
+  for (const k of Object.keys(S.B))
+    pb.appendChild(row("B_"+k, R.latents[k].vi, () => S.B[k],
+      v => S.B[k] = v, 0, 1, 0.01, false, R.latents[k].s));
+}
+
+/* ── khung nhìn 3-D ───────────────────────────────────────────────────── */
+const cv = document.getElementById("gl");
+const rend = new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
+rend.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(40,1,0.1,200);
+const SW = 3.4, SD = 2.5, LH = 1.34, TRAVEL = 0.80, NSEG = 14;
+const lanes = {}, G = {};
+
+function label(text, tok, w, align){
+  const c = document.createElement("canvas"), s = 2;
+  c.width = 384*s; c.height = 56*s;
+  const g = c.getContext("2d"); g.scale(s,s);
+  g.font = "500 30px 'Roboto Mono', monospace";
+  g.fillStyle = css(tok) || "#888";
+  g.textBaseline = "middle"; g.textAlign = (align === "r") ? "right" : "left";
+  g.fillText(text, align === "r" ? 382 : 2, 28);
+  const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,
+    depthWrite:false, depthTest:false}));
+  sp.scale.set(w||2.3, (w||2.3)*56/384, 1);
+  return sp;
+}
+function dashRect(y, tok, op){
+  const g = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-SW/2,0,-SD/2), new THREE.Vector3(SW/2,0,-SD/2),
+    new THREE.Vector3(SW/2,0,SD/2), new THREE.Vector3(-SW/2,0,SD/2),
+    new THREE.Vector3(-SW/2,0,-SD/2)]);
+  const l = new THREE.Line(g, new THREE.LineDashedMaterial({color:hx(tok),
+    dashSize:0.1, gapSize:0.08, transparent:true, opacity:op}));
+  l.computeLineDistances(); l.position.y = y; return l;
+}
+
+function buildScene(){
+  while (scene.children.length) scene.remove(scene.children[0]);
+  const LANE = {0:0,1:1,2:2,3:3,4:4,5:5,9:2.5};
+  SHORD.forEach(sh => {
+    const base = LANE[sh]*LH;
+    lanes[sh] = base;
+    const geo = new THREE.PlaneGeometry(SW, SD, NSEG, Math.round(NSEG*SD/SW));
+    geo.rotateX(-Math.PI/2);
+    const pos0 = Float32Array.from(geo.attributes.position.array);
+    const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:hx("--sheet"),
+      transparent:true, opacity:0.1, side:THREE.DoubleSide, depthWrite:false}));
+    const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:hx("--sheet"),
+      wireframe:true, transparent:true, opacity:0.3, depthWrite:false}));
+    const grp = new THREE.Group(); grp.add(fill); grp.add(wire);
+    const lb = label(SHN[sh], "--muted", 2.9, "r");
+    lb.position.set(-SW/2 - 2.45, 0.30, 0.10);
+    const vl = label("", "--fg", 2.7, "l");
+    vl.position.set(SW/2 + 1.70, 0.18, 0.10);
+    grp.add(lb); grp.add(vl);
+    if (sh === 9) {
+      grp.rotation.z = Math.PI/2;
+      grp.scale.setScalar(0.52);
+      grp.position.x = SW*1.62;
+      lb.position.set(0.30, -SW/2 - 2.0, 0.10);
+      lb.scale.multiplyScalar(1/0.52);
+      vl.visible = false;
+    }
+    scene.add(grp);
+    const lo = dashRect(base, "--muted", 0.45), hi = dashRect(base + TRAVEL, "--muted", 0.45);
+    const gh = dashRect(base, "--scar", 0.0);
+    scene.add(lo); scene.add(hi); scene.add(gh);
+    G[sh] = { grp, geo, pos0, fill, wire, lo, hi, gh, lb, vl, base };
+  });
+  G.arrows = [];
+  for (let i = 0; i < R.edges.length*2; i++){
+    const a = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(),
+      0.001, hx(i%2 ? "--norm" : "--tang").getHex(), 0.19, 0.11);
+    scene.add(a); G.arrows.push(a);
+  }
+  G.rings = {};
+  for (const sh of SHORD){
+    const t = new THREE.Mesh(new THREE.TorusGeometry(0.17,0.024,8,26),
+      new THREE.MeshBasicMaterial({color:hx("--scar"),transparent:true,opacity:0}));
+    t.rotation.x = Math.PI/2; scene.add(t); G.rings[sh] = t;
+  }
+}
+
+let yaw = -0.58, pitch = 0.235, dist = 15.2, drag = false, px = 0, py = 0;
+const FOCUS = new THREE.Vector3(-0.30, LH*2.72, 0.20);
+function place(){
+  cam.position.set(FOCUS.x + dist*Math.cos(pitch)*Math.sin(yaw),
+    FOCUS.y + dist*Math.sin(pitch),
+    FOCUS.z + dist*Math.cos(pitch)*Math.cos(yaw));
+  cam.lookAt(FOCUS);
+}
+cv.addEventListener("pointerdown", e => { drag = true; px = e.clientX; py = e.clientY;
+  cv.classList.add("drag"); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointerup", e => { drag = false; cv.classList.remove("drag");
+  try{ cv.releasePointerCapture(e.pointerId); }catch(_){} });
+cv.addEventListener("pointermove", e => { if(!drag) return;
+  yaw -= (e.clientX-px)*0.006;
+  pitch = Math.max(-0.25, Math.min(1.1, pitch + (e.clientY-py)*0.005));
+  px = e.clientX; py = e.clientY; place(); });
+cv.addEventListener("wheel", e => { e.preventDefault();
+  dist = Math.max(7, Math.min(26, dist + Math.sign(e.deltaY)*0.7)); place();
+}, {passive:false});
+/* Khung hẹp thì bề ngang mới là ràng buộc, nên nhãn và tấm ⊥ co vào cùng lúc
+   camera lùi ra — nếu chỉ lùi camera thì mô hình teo lại giữa hai dải trống. */
+let narrow = null;
+function relayout(nw){
+  if (nw === narrow) return;
+  narrow = nw;
+  // Ở khung hẹp, chữ 3-D xuống còn vài pixel nên vô dụng. Tắt nhãn và để bảng
+  // bên dưới mang số; khung nhìn khi đó chỉ còn là hình, và hình thì lớn lên.
+  for (const sh of SHORD){
+    const g = G[sh]; if (!g) continue;
+    g.lb.visible = !nw;
+    g.vl.visible = !nw && sh !== 9;
+    if (sh === 9) g.grp.position.x = SW*(nw ? 1.02 : 1.62);
+    else {
+      g.lb.position.set(-SW/2 - 2.45, 0.30, 0.10);
+      g.vl.position.set(SW/2 + 1.70, 0.18, 0.10);
+    }
+  }
+  FOCUS.x = nw ? SW*0.42 : -0.30;
+}
+function fit(){
+  const t = Math.tan(cam.fov*Math.PI/360);
+  const ex = narrow ? 3.9 : 7.4, ey = narrow ? 4.3 : 4.6;
+  dist = Math.min(30, Math.max(8, Math.max(ey/t, ex/(t*cam.aspect))*1.04));
+  place();
+}
+function resize(){
+  const w = cv.clientWidth, h = cv.clientHeight; if(!w||!h) return;
+  rend.setSize(w,h,false); cam.aspect = w/h; cam.updateProjectionMatrix();
+  relayout(cam.aspect < 1.35); fit(); schedule();
+}
+
+/* ── tính và vẽ ───────────────────────────────────────────────────────── */
+function moveA(){ return { name:"a", latents:Object.assign({}, S.A), dt:S.dt }; }
+function moveB(){ return { name:"b", latents:Object.assign({}, S.B) }; }
+function cfg(){
+  return { tau:Object.assign({}, S.tau), fragFeedback:false,
+    baseOv:Object.assign({}, S.ov), memory:S.memory,
+    H_star:S.geo.H_star, p:S.geo.p, q:S.geo.q, rho:S.geo.rho, amr:{} };
+}
+
+function compute(){
+  const c = cfg(), stt = A.copyState(S.st);
+  const t = A.trace(R, [moveA(), moveB()], stt, c);
+  const last = t.steps[t.steps.length-1];
+  return {
+    last,
+    comm: A.commutator(R, moveA(), moveB(), stt, c),
+    hol:  A.holonomy(R, [moveA(), moveB()], stt, c),
+    res:  A.residual(R, moveA(), stt, c),
+    scar: t.scar
+  };
+}
+
+function paint(){
+  let Q;
+  try { Q = compute(); }
+  catch(err){ document.getElementById("warns").innerHTML =
+    '<div class="warn"><k>lỗi tính</k><span>'
+    + String(err.message||err) + "</span></div>"; return; }
+
+  const st = Q.last, r = st.r, W = r.weights.values;
+
+  document.getElementById("hLn").textContent  = dc(r.lnDXY,6);
+  document.getElementById("hPsi").textContent = dc(r.psi_str,5);
+  document.getElementById("hKap").textContent = dc(r.kappa.kappa,4);
+  document.getElementById("hLam").textContent = dc(r.lam,4);
+  let sT = 0, sN = 0, sS = 0;
+  for (const d of st.decs){ sT += Math.abs(d.tangential); sN += Math.abs(d.normal); }
+  for (const k in Q.scar) sS += Q.scar[k];
+  document.getElementById("hTang").textContent = dc(sT,3);
+  document.getElementById("hNorm").textContent = dc(sN,3);
+  document.getElementById("hScar").textContent = dc(sS,4);
+
+  const G4 = (id,el,v,txt) => { document.getElementById(el).textContent = txt;
+    document.getElementById(id).dataset.z = Math.abs(v) < 1e-12 ? "1" : "0"; };
+  G4("gC","vC",Q.comm.norm, sci(Q.comm.norm,false));
+  G4("gH","vH",Q.hol.value, sci(Q.hol.value,true));
+  G4("gR","vR",Q.res.value, (Q.res.value>=0?"+":"") + dc(Q.res.value,6));
+  document.getElementById("vCn").textContent = dc(r.weights.couplingNorm,3);
+  document.getElementById("vCt").textContent = dc(r.psycho.contraction,3);
+
+  const cap = (R.ceilings && R.ceilings[S.memory]) || R.ceiling;
+  const over = Object.keys(S.tau).filter(k => S.tau[k] > cap + 1e-12);
+  if (over.length) r.warnings = r.warnings.concat(
+    ["τ = " + dc(Math.max.apply(null, over.map(k => S.tau[k])), 3)
+     + " vượt trần " + dc(cap, 3) + " của dạng "
+     + (S.memory === "fatigue" ? "mỏi" : "trễ")
+     + ". Cùng ngân sách thực nghiệm, một đơn vị τ sinh lượng ξ khác nhau ở hai"
+     + " dạng, nên trần khác nhau: trễ " + dc(R.ceilings.hysteresis,3)
+     + ", mỏi " + dc(R.ceilings.fatigue,3) + "."]);
+  const wb = document.getElementById("warns");
+  wb.innerHTML = r.warnings.length
+    ? '<div class="warn"><k>engine</k>'
+      + r.warnings.map(w => "<span>"+w+"</span>").join("") + "</div>" : "";
+
+  /* ── hình học ─────────────────────────────────────────────────────── */
+  const inten = st.intensity, taut = st.taut;
+  for (const sh of SHORD){
+    const g = G[sh], pk = A.POS_WEIGHT[String(sh)];
+    let u = 0.5, hasPos = !!pk, val = null, zone = null, moved = 0;
+    if (hasPos){
+      const w = R.weights[pk];
+      val = W[pk]; zone = [w.lo, w.hi];
+      u = (val - w.lo) / Math.max(1e-12, w.hi - w.lo);
+      const b0 = (pk in S.ov) ? S.ov[pk] : w.b;
+      moved = Math.max(0, b0 - val);
+    }
+    const y = g.base + TRAVEL*Math.min(1,Math.max(0,u));
+    const II = taut[sh] === undefined ? 0 : taut[sh];
+    const scar = Q.scar[String(sh)] || 0;
+    const dent = Math.min(0.46, scar*0.9);
+
+    const p = g.geo.attributes.position, b = g.pos0;
+    const rmax2 = (SW/2)*(SW/2) + (SD/2)*(SD/2);
+    for (let i = 0; i < p.count; i++){
+      const x = b[i*3], z = b[i*3+2], r2 = x*x + z*z;
+      p.array[i*3+1] = b[i*3+1]
+        + II*0.16*(r2/rmax2)                       // độ cong: II = 4Λ′
+        - dent*Math.exp(-r2/(2*0.40*0.40));        // vị trí đã dịch tại chỗ
+    }
+    p.needsUpdate = true; g.geo.computeBoundingSphere();
+    g.grp.position.y = y;
+    g.fill.material.opacity = 0.05 + 0.26*Math.min(1,Math.max(0,inten[sh]||0));
+    g.wire.material.opacity = 0.16 + 0.34*Math.min(1,Math.max(0,inten[sh]||0));
+    g.lo.visible = g.hi.visible = hasPos;
+    g.gh.position.y = g.base + TRAVEL*(hasPos
+      ? ((((pk in S.ov) ? S.ov[pk] : R.weights[pk].b) - zone[0])
+         / Math.max(1e-12, zone[1]-zone[0])) : 0.5);
+    g.gh.material.opacity = moved > 1e-9 ? 0.75 : 0.0;
+    g.vl.material.map.dispose();
+    const txt = hasPos
+      ? (R.weights[pk].s + " " + dc(val,3) + (moved>1e-9 ? "  ↓"+dc(moved,3) : ""))
+      : "không có vị trí";
+    const nl = label(txt, moved>1e-9 ? "--scar" : (hasPos ? "--fg" : "--muted"),
+                     2.7, "l");
+    g.vl.material = nl.material; g.vl.scale.copy(nl.scale);
+    g.vl.visible = !narrow && sh !== 9;
+    G.rings[sh].position.set(g.grp.position.x, y - dent + 0.012, g.grp.position.z);
+    G.rings[sh].material.opacity = scar > 1e-9 ? 0.9 : 0.0;
+    G.rings[sh].scale.setScalar(0.8 + Math.min(1.9, scar*2.0));
+  }
+
+  st.decs.forEach((d,i) => {
+    const gt = G[d.dst]; if (!gt) return;
+    const yT = gt.grp.position.y;
+    const at = G.arrows[i*2], an = G.arrows[i*2+1];
+    const L = 1.45, MIN = 0.16;
+    const off = -SD/2 + 0.3 + (i%7)*(SD-0.6)/6;
+    const x0 = -SW/2 + 0.26, y0 = yT + 0.05;
+    at.position.set(x0, y0, off);
+    at.setDirection(new THREE.Vector3(1,0,0));
+    at.setLength(Math.max(MIN, Math.abs(d.tangential)*L), 0.17, 0.1);
+    at.visible = Math.abs(d.tangential) > 0.004;
+    an.position.set(x0, y0, off);
+    an.setDirection(new THREE.Vector3(0,-1,0));
+    an.setLength(Math.max(MIN, Math.abs(d.normal)*L), 0.17, 0.1);
+    an.visible = Math.abs(d.normal) > 0.004;
+  });
+
+  /* ── bảng ─────────────────────────────────────────────────────────── */
+  const nvar = {}; for (const k in R.atlas){
+    const s = R.atlas[k].sh; nvar[s] = (nvar[s]||0)+1; }
+  document.getElementById("tSheets").innerHTML = SHORD.map(sh => {
+    const pk = A.POS_WEIGHT[String(sh)];
+    const w = pk ? R.weights[pk] : null;
+    const val = pk ? W[pk] : null;
+    const b0 = pk ? ((pk in S.ov) ? S.ov[pk] : w.b) : null;
+    const mv = pk ? Math.max(0, b0 - val) : 0;
+    const raw = Q.scar[String(sh)] || 0;
+    const capped = pk && raw > mv + 1e-9;
+    const span = w ? Math.max(1e-12, w.hi - w.lo) : 1;
+    const wMv  = w ? 54*Math.min(1, mv/span) : 0;
+    const wCap = w ? 54*Math.min(1 - Math.min(1,mv/span), (raw-mv)/span) : 0;
+    const bar = (v, cls) => '<span class="track"><i class="fill '+cls
+      + '" style="width:'+(54*Math.min(1,Math.max(0,v))).toFixed(1)+'px"></i></span>';
+    return '<tr><td>'+SHN[sh]+"</td>"
+      + '<td class="k">'+(w ? w.s : "—")+"</td>"
+      + '<td class="z">'+(w ? "["+dc(w.lo,2)+", "+dc(w.hi,2)+"]" : "—")+"</td>"
+      + "<td>"+(w ? dc(val,4) : "—")+"</td>"
+      + '<td class="'+(raw>1e-9?"s":"z")+'">'+(raw>1e-9 ? dc(raw,4) : "0")+"</td>"
+      + '<td class="'+(mv>1e-9?"s":"z")+'">'+(w ? (mv>1e-9 ? "−"+dc(mv,4) : "0") : "—")
+        + (w ? '<span class="track"><i class="fill s" style="width:'+wMv.toFixed(1)
+             + 'px"></i><i class="cap" style="width:'+Math.max(0,wCap).toFixed(1)
+             + 'px"></i></span>' : "")
+        + "</td>"
+      + "<td>"+dc(inten[sh],4)+bar(inten[sh]||0,"")+"</td>"
+      + "<td>"+dc(taut[sh],4)+bar(taut[sh]||0,"t")+"</td>"
+      + '<td class="z">'+(nvar[sh]||0)+"</td></tr>";
+  }).join("");
+
+  document.getElementById("tEdges").innerHTML = st.decs.map(d => {
+    const a = R.atlas[d.w];
+    return "<tr>"
+      + "<td>Σ"+SUB[d.src]+" → Σ"+SUB[d.dst]+"</td>"
+      + '<td class="k">'+d.v+"</td>"
+      + '<td class="k">'+d.w+"</td>"
+      + '<td class="z">'+(a?a.role:"—")+"</td>"
+      + '<td class="'+(Math.abs(d.load)<1e-12?"z":"")+'">'
+        + (d.load>=0?"+":"")+dc(d.load,2)+"</td>"
+      + '<td class="'+(d.tau>1e-9?"":"z")+'">'+dc(d.tau,3)+"</td>"
+      + '<td class="g">'+dc(d.tangential,3)+"</td>"
+      + '<td class="'+(Math.abs(d.normal)>1e-9?"n":"z")+'">'+dc(d.normal,3)+"</td>"
+      + '<td class="'+(d.excess>1e-9?"":"z")+'">'+dc(d.excess,4)+"</td>"
+      + '<td class="'+(d.depth>1e-9?"s":"z")+'">'+dc(d.depth,5)+"</td></tr>";
+  }).join("");
+
+  const mx = r.terms.reduce((s,t) => Math.max(s, Math.abs(t.lc)), 1e-9);
+  document.getElementById("tTerms").innerHTML = r.terms.map(t =>
+    "<tr><td>"+t.s+"</td>"
+    + '<td class="z">'+t.side+"</td>"
+    + "<td>"+dc(t.lvl,4)+"</td><td>"+dc(t.exp,4)+"</td>"
+    + '<td class="'+(t.lc<0?"n":"g")+'">'+(t.lc>=0?"+":"")+dc(t.lc,5)+"</td>"
+    + '<td><span class="track"><i class="fill '+(t.lc<0?"n":"t")+'" style="width:'
+    + (54*Math.abs(t.lc)/mx).toFixed(1)+'px"></i></span></td>'
+    + '<td class="z">'+t.ev+"</td></tr>").join("");
+}
+
+let pending = false;
+function schedule(){ if (pending) return; pending = true;
+  requestAnimationFrame(() => { pending = false; paint(); }); }
+
+function syncAll(){
+  document.querySelectorAll(".f").forEach(f => { if (f.__sync) f.__sync(); });
+}
+document.getElementById("bBase").addEventListener("click", () => {
+  reset(); syncAll(); schedule(); });
+document.getElementById("bRand").addEventListener("click", () => {
+  const rnd = (a,b) => a + Math.random()*(b-a);
+  for (const k in S.st.latents) S.st.latents[k] = +rnd(0.05,0.95).toFixed(3);
+  for (const k in S.st.channels) S.st.channels[k] = +Math.exp(rnd(-0.3,0.3)).toFixed(4);
+  for (const [k] of SIGK) S.st.sigmaInputs[k] = +rnd(0.05,0.95).toFixed(3);
+  for (const e of R.edges) S.tau[e[0]+">"+e[1]] = +rnd(0, R.ceiling).toFixed(3);
+  syncAll(); schedule();
+});
+const mHy = document.getElementById("mHy"), mFa = document.getElementById("mFa");
+function setMemory(m){
+  S.memory = m;
+  mHy.setAttribute("aria-pressed", String(m === "hysteresis"));
+  mFa.setAttribute("aria-pressed", String(m === "fatigue"));
+  schedule();
+}
+mHy.addEventListener("click", () => setMemory("hysteresis"));
+mFa.addEventListener("click", () => setMemory("fatigue"));
+
+document.getElementById("bOpen").addEventListener("click",
+  () => SECS.forEach(d => d.open = true));
+document.getElementById("bShut").addEventListener("click",
+  () => SECS.forEach(d => d.open = false));
+
+function loop(){ rend.render(scene, cam); requestAnimationFrame(loop); }
+buildInputs(); buildScene(); resize(); paint(); loop();
+addEventListener("resize", resize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",
+  () => location.reload());
+})();
+</script>

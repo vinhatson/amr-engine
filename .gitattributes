@@ -1,0 +1,26 @@
+# Normalise to LF in the repository; check out native on Windows.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.pdf    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.woff   binary
+*.woff2  binary
+*.zip    binary
+*.gz     binary
+*.rar    binary
+*.tar    binary
+
+# Keep generated panels and payloads out of language statistics, so GitHub
+# reports the repository as Python rather than as HTML/JSON.
+panels/*.html        linguist-vendored
+amr3/web/*.json      linguist-generated
+sea2027/*.json       linguist-generated
+sea2027/out_*.txt    linguist-generated
+web/index.html       linguist-vendored
+index.html           linguist-documentation
+docs/*               linguist-documentation
