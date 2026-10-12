@@ -58,7 +58,7 @@ Everything else — the model, the registry, the vectors — is baked into the f
 Python 3.9+. The core has **no dependencies at all** — standard library only.
 
 ```bash
-git clone https://github.com/<your-username>/amr-engine.git
+git clone https://github.com/vinhatson/amr-engine.git
 cd amr-engine
 python -m amr check          # structural constraints, with the slack on each
 ```
@@ -124,7 +124,7 @@ the most useful contribution anyone could make here — see
 [Contributing](#contributing).
 
 By contrast, the author's other engine
-([sccdx-engine](https://github.com/<your-username>/sccdx-engine)) is fully
+([sccdx-engine](https://github.com/vinhatson/sccdx-engine)) is fully
 bilingual, with 406 paired templates and a test that fails if either side is
 missing.
 

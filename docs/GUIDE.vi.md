@@ -50,7 +50,7 @@ Python 3.9 trở lên. **Không phụ thuộc gì** — chỉ thư viện chuẩ
 package.
 
 ```bash
-git clone https://github.com/<tên-tài-khoản>/amr-engine.git
+git clone https://github.com/vinhatson/amr-engine.git
 cd amr-engine
 python -m amr check
 ```

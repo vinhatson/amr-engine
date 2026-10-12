@@ -58,7 +58,7 @@ hình, registry, các vector — đều đã nén sẵn trong file.
 Python 3.9+. Phần lõi **không phụ thuộc gì cả** — chỉ thư viện chuẩn.
 
 ```bash
-git clone https://github.com/<tên-tài-khoản>/amr-engine.git
+git clone https://github.com/vinhatson/amr-engine.git
 cd amr-engine
 python -m amr check          # ràng buộc cấu trúc, kèm độ dư từng cái
 ```

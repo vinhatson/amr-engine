@@ -50,7 +50,7 @@ Python 3.9 or newer. **No dependencies** — standard library only, for all thre
 packages.
 
 ```bash
-git clone https://github.com/<your-username>/amr-engine.git
+git clone https://github.com/vinhatson/amr-engine.git
 cd amr-engine
 python -m amr check
 ```
